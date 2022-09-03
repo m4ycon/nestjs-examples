@@ -40,21 +40,16 @@ export class UsersService {
   async update(id: number, updateUserDto: UpdateUserDto) {
     const user = await this.prisma.user
       .update({ where: { id }, data: updateUserDto })
-      .catch(this._catchNotFound)
+      .catch((e) => this.prisma._exceptionNotFound(e, 'User'))
+
     return user
   }
 
   async remove(id: number) {
     const user = await this.prisma.user
       .delete({ where: { id } })
-      .catch(this._catchNotFound)
-    return user
-  }
+      .catch((e) => this.prisma._exceptionNotFound(e, 'User'))
 
-  private _catchNotFound(e: any) {
-    if (e instanceof PrismaClientKnownRequestError) {
-      if (e.code === 'P2025') throw new NotFoundException('User not found')
-    }
-    throw new Error(e)
+    return user
   }
 }
