@@ -23,6 +23,12 @@ export interface UsersServiceInterface {
   findOne(id: number): Promise<UserWithoutPass>
 
   /**
+   * Finds user with this email
+   * @param email Email from the user
+   */
+  findByEmail(email: string): Promise<User>
+
+  /**
    * Updates an user
    * @param id Id from the user
    * @param updateUserDto Data to be updated in database

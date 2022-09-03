@@ -3,8 +3,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
+import { User } from '@prisma/client'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime'
-import argon2 from 'argon2'
+import * as bcrypt from 'bcrypt'
 import { PrismaService } from 'src/prisma/prisma.service'
 import { CreateUserDto, UpdateUserDto } from './dto'
 import { UsersServiceInterface } from './interfaces'
@@ -14,9 +15,11 @@ export class UsersService implements UsersServiceInterface {
   constructor(private prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto) {
+    const hash = await this.hashPassword(createUserDto.password)
+
     const user = await this.prisma.user
       .create({
-        data: createUserDto,
+        data: { ...createUserDto, password: hash },
         select: { id: true, displayName: true, email: true },
       })
       .catch((e) => {
@@ -25,12 +28,13 @@ export class UsersService implements UsersServiceInterface {
             throw new BadRequestException('Email is already in use')
         }
       })
+
     return user
   }
 
   async findAll() {
     const users = await this.prisma.user.findMany({
-      select: { id: true, displayName: true, email: true },
+      // select: { id: true, displayName: true, email: true },
     })
     return users
   }
@@ -47,6 +51,11 @@ export class UsersService implements UsersServiceInterface {
     return user
   }
 
+  async findByEmail(email: string): Promise<User> {
+    const user = await this.prisma.user.findUnique({ where: { email } })
+    return user
+  }
+
   async update(id: number, updateUserDto: UpdateUserDto) {
     const user = await this.prisma.user
       .update({
@@ -60,12 +69,13 @@ export class UsersService implements UsersServiceInterface {
   }
 
   async hashPassword(password: string): Promise<string> {
-    const hash = await argon2.hash(password)
+    const salt = await bcrypt.genSalt()
+    const hash = await bcrypt.hash(password, salt)
     return hash
   }
 
   async comparePasswords(password: string, hash: string): Promise<boolean> {
-    const matches = await argon2.verify(hash, password)
+    const matches = await bcrypt.compare(password, hash)
     return matches
   }
 }

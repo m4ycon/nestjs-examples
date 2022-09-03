@@ -1,6 +1,7 @@
 import { User } from '@prisma/client'
 import {
   IsEmail,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
@@ -8,6 +9,7 @@ import {
 } from 'class-validator'
 
 export class UserEntity implements User {
+  @IsNotEmpty()
   @IsNumber()
   id: number
 
@@ -15,10 +17,12 @@ export class UserEntity implements User {
   @IsString()
   displayName: string | null
 
+  @IsNotEmpty()
   @IsString()
   @IsEmail()
   email: string
 
+  @IsNotEmpty()
   @IsString()
   @MinLength(6)
   password: string
