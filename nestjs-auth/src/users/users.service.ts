@@ -15,7 +15,10 @@ export class UsersService implements UsersServiceInterface {
 
   async create(createUserDto: CreateUserDto) {
     const user = await this.prisma.user
-      .create({ data: createUserDto })
+      .create({
+        data: createUserDto,
+        select: { id: true, displayName: true, email: true },
+      })
       .catch((e) => {
         if (e instanceof PrismaClientKnownRequestError) {
           if (e.code === 'P2002')
@@ -26,13 +29,18 @@ export class UsersService implements UsersServiceInterface {
   }
 
   async findAll() {
-    const users = await this.prisma.user.findMany()
+    const users = await this.prisma.user.findMany({
+      select: { id: true, displayName: true, email: true },
+    })
     return users
   }
 
   async findOne(id: number) {
     const user = await this.prisma.user
-      .findUniqueOrThrow({ where: { id } })
+      .findUniqueOrThrow({
+        where: { id },
+        select: { id: true, displayName: true, email: true },
+      })
       .catch(() => {
         throw new NotFoundException('User not found')
       })
@@ -41,7 +49,11 @@ export class UsersService implements UsersServiceInterface {
 
   async update(id: number, updateUserDto: UpdateUserDto) {
     const user = await this.prisma.user
-      .update({ where: { id }, data: updateUserDto })
+      .update({
+        where: { id },
+        data: updateUserDto,
+        select: { id: true, displayName: true, email: true },
+      })
       .catch((e) => this.prisma._exceptionNotFound(e, 'User'))
 
     return user
@@ -51,6 +63,7 @@ export class UsersService implements UsersServiceInterface {
     const hash = await argon2.hash(password)
     return hash
   }
+
   async comparePasswords(password: string, hash: string): Promise<boolean> {
     const matches = await argon2.verify(hash, password)
     return matches
