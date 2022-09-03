@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common'
+import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { UsersService } from 'src/users/users.service'
 import { SignUpDto, SignInDto } from './dto'
 import { AuthServiceInterface } from './interfaces'
@@ -12,9 +8,11 @@ export class AuthService implements AuthServiceInterface {
   constructor(private usersService: UsersService) {}
 
   async signup(signUpDto: SignUpDto): Promise<{ accessToken: string }> {
-    const { passwordConfirmation, ...userData } = signUpDto
-    if (passwordConfirmation != userData.password)
-      throw new BadRequestException("Passwords doesn't match")
+    const userData = {
+      displayName: signUpDto.displayName,
+      email: signUpDto.email,
+      password: signUpDto.password,
+    }
 
     await this.usersService.create(userData)
 
