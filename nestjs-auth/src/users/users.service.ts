@@ -4,11 +4,13 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime'
+import argon2 from 'argon2'
 import { PrismaService } from 'src/prisma/prisma.service'
 import { CreateUserDto, UpdateUserDto } from './dto'
+import { UsersServiceInterface } from './interfaces'
 
 @Injectable()
-export class UsersService {
+export class UsersService implements UsersServiceInterface {
   constructor(private prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -45,11 +47,12 @@ export class UsersService {
     return user
   }
 
-  async remove(id: number) {
-    const user = await this.prisma.user
-      .delete({ where: { id } })
-      .catch((e) => this.prisma._exceptionNotFound(e, 'User'))
-
-    return user
+  async hashPassword(password: string): Promise<string> {
+    const hash = await argon2.hash(password)
+    return hash
+  }
+  async comparePasswords(password: string, hash: string): Promise<boolean> {
+    const matches = await argon2.verify(hash, password)
+    return matches
   }
 }
