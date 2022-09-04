@@ -1,4 +1,14 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common'
+import { Request } from 'express'
 import { AuthService } from './auth.service'
 import { GetUser } from './decorators'
 import { SignUpDto } from './dto'
@@ -15,7 +25,15 @@ export class AuthController {
 
   @UseGuards(LocalGuard) // this guard is responsible to sign in
   @Post('signin')
+  @HttpCode(HttpStatus.OK)
   async signin(@GetUser() user: any) {
     return user
+  }
+
+  @Get('signout')
+  async signout(@Req() request: Request) {
+    request.session.destroy(() => null)
+
+    return { message: 'Succesfully logged out' }
   }
 }

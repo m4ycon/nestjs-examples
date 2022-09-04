@@ -18,3 +18,5 @@ $ nest g resource users
 # importa módulo do prisma e cria CRUD com prisma no service
 
 ```
+
+Ref: https://www.loginradius.com/blog/engineering/guest-post/session-authentication-with-nestjs-and-mongodb/
