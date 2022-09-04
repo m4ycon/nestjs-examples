@@ -7,19 +7,15 @@ import { AuthServiceInterface } from './interfaces'
 export class AuthService implements AuthServiceInterface {
   constructor(private usersService: UsersService) {}
 
-  async signup(signUpDto: SignUpDto): Promise<{ accessToken: string }> {
-    const userData = {
-      displayName: signUpDto.displayName,
-      email: signUpDto.email,
-      password: signUpDto.password,
-    }
+  async signup(signUpDto: SignUpDto) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { passwordConfirmation, ...userData } = signUpDto
 
-    await this.usersService.create(userData)
-
-    return { accessToken: 'oi' }
+    const user = await this.usersService.create(userData)
+    return user
   }
 
-  async signin(signInDto: SignInDto): Promise<{ accessToken: string }> {
+  async signin(signInDto: SignInDto) {
     const { email, password } = signInDto
     const user = await this.usersService.findByEmail(email)
     if (!user) throw new UnauthorizedException('Invalid credentials')
@@ -30,6 +26,6 @@ export class AuthService implements AuthServiceInterface {
     )
     if (!passMatches) throw new UnauthorizedException('Invalid credentials')
 
-    return { accessToken: 'oi' }
+    return { id: user.id, email: user.email }
   }
 }
