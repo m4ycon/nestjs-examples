@@ -9,15 +9,20 @@ export class SessionSerializer extends PassportSerializer {
   }
 
   serializeUser(user: any, done: (err: Error, user: any) => void) {
+    // user come from LocalStrategy's validate
+    // this info can be used on payload of deserializeUser
     done(null, { id: user.id })
   }
 
   async deserializeUser(
-    payload: any,
+    payload: { id: number },
     done: (err: Error, payload: any) => void,
   ) {
+    // recommended to do this here because user can update its info
+    // and it will be outdated if done in serializeUser (which could be cheaper)
     const user = await this.usersService.findOne(payload.id)
 
-    done(null, user)
+    // this info will be in request.user
+    done(null, { id: user.id, email: user.email })
   }
 }

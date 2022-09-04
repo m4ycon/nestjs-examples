@@ -2,15 +2,21 @@ import { Controller, Get, Body, Patch, Param, UseGuards } from '@nestjs/common'
 import { UsersService } from './users.service'
 import { UpdateUserDto } from './dto'
 import { AuthenticatedGuard } from 'src/auth/guards'
+import { GetUser } from 'src/auth/decorators'
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @UseGuards(AuthenticatedGuard)
   @Get()
   findAll() {
     return this.usersService.findAll()
+  }
+
+  @UseGuards(AuthenticatedGuard)
+  @Get('me')
+  me(@GetUser() user: any) {
+    return user
   }
 
   @Get(':id')
