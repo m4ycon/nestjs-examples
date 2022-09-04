@@ -6,7 +6,7 @@ import {
 import { User } from '@prisma/client'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime'
 import * as bcrypt from 'bcrypt'
-import { PrismaService } from 'src/prisma/prisma.service'
+import { PrismaService } from '../prisma/prisma.service'
 import { CreateUserDto, UpdateUserDto } from './dto'
 import { UsersServiceInterface } from './interfaces'
 
