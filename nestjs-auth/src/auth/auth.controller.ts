@@ -10,9 +10,8 @@ import {
 } from '@nestjs/common'
 import { Request } from 'express'
 import { AuthService } from './auth.service'
-import { GetUser } from './decorators'
+import { GetUser, LocalGuard } from '../common'
 import { SignUpDto } from './dto'
-import { LocalGuard } from './guards'
 
 @Controller('auth')
 export class AuthController {

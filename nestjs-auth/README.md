@@ -20,3 +20,7 @@ $ nest g resource users
 ```
 
 Ref: https://www.loginradius.com/blog/engineering/guest-post/session-authentication-with-nestjs-and-mongodb/
+
+https://youtu.be/uAKzFhE3rxU
+
+https://youtu.be/_L225zpUK0M
