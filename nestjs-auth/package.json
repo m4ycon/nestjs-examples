@@ -9,6 +9,7 @@
     "prebuild": "rimraf dist",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "prepare": "cd .. && husky install nestjs-auth/.husky",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
@@ -54,7 +55,9 @@
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-unused-imports": "^2.0.0",
+    "husky": "^8.0.1",
     "jest": "28.1.2",
+    "lint-staged": "^13.0.3",
     "prettier": "^2.3.2",
     "prisma": "^4.2.1",
     "source-map-support": "^0.5.20",
@@ -81,5 +84,15 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
+  },
+  "lint-staged": {
+    "prisma/schema.prisma": [
+      "prisma format"
+    ],
+    "src/**/*.ts": [
+      "prettier --write",
+      "lint --cache --max-warnings=0",
+      "test --findRelatedTests --watch=false --bail"
+    ]
   }
 }
