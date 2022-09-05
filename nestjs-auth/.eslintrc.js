@@ -36,7 +36,7 @@ module.exports = {
             groups: [
               [
                 "^@.*$", // @ modules
-                "^[^.][^\/]*$" // libs
+                "^[^.].*$" // libs
               ],
               [
                 "^.*\.\.\/.*$", // `../` parents folder
