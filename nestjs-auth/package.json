@@ -90,9 +90,9 @@
       "prisma format"
     ],
     "src/**/*.ts": [
-      "prettier --write",
-      "lint --cache --max-warnings=0",
-      "test --findRelatedTests --watch=false --bail"
+      "yarn format",
+      "yarn lint --cache --max-warnings=0",
+      "yarn test --findRelatedTests --watch=false --bail"
     ]
   }
 }
