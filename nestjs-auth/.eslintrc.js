@@ -34,10 +34,15 @@ module.exports = {
           "error",
           {
             groups: [
-              // @ modules, libs (not starting with `.`)
-              ["^@.*", "^(?!\\.).*$"],
-              // `..` parents folder, other relative imports, same-folder imports, `.` last.
-              ["^\\.\\./?$", "^\\./(?=.*/)(?!/?$)", "^\\.(?!/?$)", "^\\./?$"],
+              [
+                "^@.*$", // @ modules
+                "^[^.][^\/]*$" // libs
+              ],
+              [
+                "^.*\.\.\/.*$", // `../` parents folder
+                "^\.\/.*\/.*$", // `./xyz/abc` imports
+                "^\.\/[^/]*$", // `./main` same-folder imports
+              ],
             ]
           }
         ]
