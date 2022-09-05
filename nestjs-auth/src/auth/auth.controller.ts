@@ -9,8 +9,9 @@ import {
   UseGuards,
 } from '@nestjs/common'
 import { Request } from 'express'
-import { AuthService } from './auth.service'
+
 import { GetUser, LocalGuard } from '../common'
+import { AuthService } from './auth.service'
 import { SignUpDto } from './dto'
 
 @Controller('auth')

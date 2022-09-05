@@ -31,6 +31,7 @@
     "bcrypt": "^5.0.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.13.2",
+    "eslint-plugin-simple-import-sort": "^8.0.0",
     "express-session": "^1.17.3",
     "passport": "^0.6.0",
     "passport-local": "^1.0.0",
@@ -91,8 +92,7 @@
     ],
     "src/**/*.ts": [
       "yarn format",
-      "yarn lint --cache --max-warnings=0",
-      "yarn test --findRelatedTests --watch=false --bail"
+      "yarn lint --cache --max-warnings=0"
     ]
   }
 }

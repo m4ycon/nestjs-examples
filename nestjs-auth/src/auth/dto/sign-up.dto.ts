@@ -1,7 +1,8 @@
 import { PickType } from '@nestjs/mapped-types'
 import { IsNotEmpty, IsString } from 'class-validator'
-import { UserEntity } from '../../users/entities'
+
 import { Match } from '../../common'
+import { UserEntity } from '../../users/entities'
 
 export class SignUpDto extends PickType(UserEntity, [
   'email',

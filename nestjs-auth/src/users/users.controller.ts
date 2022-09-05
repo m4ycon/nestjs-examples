@@ -1,7 +1,8 @@
-import { Controller, Get, Body, Patch, Param, UseGuards } from '@nestjs/common'
-import { UsersService } from './users.service'
+import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common'
+
+import { AuthenticatedGuard, GetUser } from '../common'
 import { UpdateUserDto } from './dto'
-import { GetUser, AuthenticatedGuard } from '../common'
+import { UsersService } from './users.service'
 
 @Controller('users')
 export class UsersController {

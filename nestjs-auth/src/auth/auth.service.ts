@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common'
+
 import { UsersService } from '../users/users.service'
-import { SignUpDto, SignInDto } from './dto'
+import { SignInDto, SignUpDto } from './dto'
 import { AuthServiceInterface } from './interfaces'
 
 @Injectable()

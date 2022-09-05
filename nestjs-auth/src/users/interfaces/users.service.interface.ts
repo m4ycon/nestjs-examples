@@ -1,4 +1,5 @@
 import { User } from '@prisma/client'
+
 import { CreateUserDto, UpdateUserDto } from '../dto'
 
 type UserWithoutPass = Omit<User, 'password'>

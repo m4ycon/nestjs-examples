@@ -1,4 +1,5 @@
 import { User } from '@prisma/client'
+
 import { SignInDto, SignUpDto } from '../dto'
 
 export interface AuthServiceInterface {

@@ -5,7 +5,7 @@ module.exports = {
     tsconfigRootDir : __dirname, 
     sourceType: 'module',
   },
-  plugins: ['@typescript-eslint/eslint-plugin', 'unused-imports'],
+  plugins: ['@typescript-eslint/eslint-plugin', 'unused-imports', 'simple-import-sort'],
   extends: [
     'plugin:@typescript-eslint/recommended',
     'plugin:prettier/recommended',
@@ -23,5 +23,25 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'off',
     'semi': ['error', 'never'],
     "unused-imports/no-unused-imports": "error",
+    "simple-import-sort/imports": "error",
+    "simple-import-sort/exports": "error"
   },
+  overrides: [
+    {
+      files: ["*.ts"],
+      rules: {
+        "simple-import-sort/imports": [
+          "error",
+          {
+            groups: [
+              // @ modules, libs (not starting with `.`)
+              ["^@.*", "^(?!\\.).*$"],
+              // `..` parents folder, other relative imports, same-folder imports, `.` last.
+              ["^\\.\\./?$", "^\\./(?=.*/)(?!/?$)", "^\\.(?!/?$)", "^\\./?$"],
+            ]
+          }
+        ]
+      }
+    }
+  ]
 };
