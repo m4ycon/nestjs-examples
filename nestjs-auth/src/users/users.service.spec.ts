@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common'
+import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime'
 
@@ -13,6 +13,8 @@ describe('UsersService', () => {
   const prismaMock = {
     user: {
       create: jest.fn(),
+      findMany: jest.fn(),
+      findUniqueOrThrow: jest.fn(),
     },
   }
 
@@ -78,6 +80,65 @@ describe('UsersService', () => {
           // password must not be returned
         },
       })
+    })
+  })
+
+  describe('findAll', () => {
+    let userData: Omit<UserEntity, 'id'>
+    beforeAll(() => {
+      userData = TestUtils.genUser()
+    })
+
+    it('should return an array of users', async () => {
+      prismaMock.user.findMany.mockResolvedValueOnce([userData])
+
+      const response = await service.findAll()
+      expect(response).toMatchObject([userData])
+    })
+
+    it('should not return password of users', async () => {
+      prismaMock.user.findMany.mockResolvedValueOnce([userData])
+      await service.findAll()
+
+      expect(prismaMock.user.findMany).toHaveBeenLastCalledWith({
+        select: {
+          id: true,
+          displayName: true,
+          email: true,
+          // password must not be returned
+        },
+      })
+    })
+  })
+
+  describe('findOne', () => {
+    let userData: Omit<UserEntity, 'id'>
+    beforeAll(() => {
+      userData = TestUtils.genUser()
+    })
+
+    it('should return a user', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValueOnce(userData)
+
+      const response = await service.findOne(1)
+      expect(response).toMatchObject(userData)
+      expect(prismaMock.user.findUniqueOrThrow).toHaveBeenLastCalledWith({
+        where: { id: 1 },
+        select: {
+          id: true,
+          displayName: true,
+          email: true,
+          // password must not be returned
+        },
+      })
+    })
+
+    it('should throw an error if user is not found', async () => {
+      prismaMock.user.findUniqueOrThrow.mockRejectedValueOnce(new Error())
+
+      await expect(service.findOne(1)).rejects.toBeInstanceOf(
+        new NotFoundException('User not found').constructor,
+      )
     })
   })
 })

@@ -35,7 +35,7 @@ export class UsersService implements UsersServiceInterface {
 
   async findAll() {
     const users = await this.prisma.user.findMany({
-      // select: { id: true, displayName: true, email: true },
+      select: { id: true, displayName: true, email: true },
     })
     return users
   }
