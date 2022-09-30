@@ -1,6 +1,7 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime'
+import * as bcrypt from 'bcrypt'
 
 import { PrismaModule } from '../prisma/prisma.module'
 import { PrismaService } from '../prisma/prisma.service'
@@ -15,7 +16,10 @@ describe('UsersService', () => {
       create: jest.fn(),
       findMany: jest.fn(),
       findUniqueOrThrow: jest.fn(),
+      findUnique: jest.fn(),
+      update: jest.fn(),
     },
+    _exceptionNotFound: jest.fn(),
   }
 
   beforeEach(async () => {
@@ -139,6 +143,71 @@ describe('UsersService', () => {
       await expect(service.findOne(1)).rejects.toBeInstanceOf(
         new NotFoundException('User not found').constructor,
       )
+    })
+  })
+
+  describe('findByEmail', () => {
+    let userData: Omit<UserEntity, 'id'>
+    beforeAll(() => {
+      userData = TestUtils.genUser()
+    })
+
+    it('should return a user', async () => {
+      prismaMock.user.findUnique.mockResolvedValueOnce(userData)
+
+      const response = await service.findByEmail(userData.email)
+      expect(response).toMatchObject(userData)
+      expect(prismaMock.user.findUnique).toHaveBeenLastCalledWith({
+        where: { email: userData.email },
+      })
+    })
+  })
+
+  describe('update', () => {
+    let userData: Omit<UserEntity, 'id'>
+    beforeAll(() => {
+      userData = TestUtils.genUser()
+    })
+
+    it('should return a user', async () => {
+      prismaMock.user.update.mockResolvedValueOnce(userData)
+
+      const response = await service.update(1, userData)
+      expect(response).toMatchObject(userData)
+      expect(prismaMock.user.update).toHaveBeenLastCalledWith({
+        where: { id: 1 },
+        data: userData,
+        select: { id: true, displayName: true, email: true },
+      })
+    })
+
+    it('should throw an error if user not found', async () => {
+      prismaMock.user.update.mockRejectedValueOnce(
+        new PrismaClientKnownRequestError('', 'P2025', ''),
+      )
+
+      await service.update(1, userData)
+      expect(prismaMock._exceptionNotFound).toHaveBeenCalled()
+    })
+  })
+
+  describe('hashPassword', () => {
+    it('should hash a password', async () => {
+      const password = 'password'
+      const hashedPassword = await service.hashPassword(password)
+      expect(hashedPassword).toBeDefined()
+      expect(hashedPassword).not.toBe(password)
+    })
+  })
+
+  describe('comparePasswords', () => {
+    it.each([false, true])('should return %p', async (value) => {
+      jest
+        .spyOn(bcrypt, 'compare')
+        .mockImplementationOnce(() => Promise.resolve(value))
+
+      const response = await service.comparePasswords('password', '123456')
+      expect(response).toBe(value)
     })
   })
 })
