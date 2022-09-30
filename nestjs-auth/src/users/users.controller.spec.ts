@@ -1,8 +1,13 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common'
+import {
+  INestApplication,
+  UnauthorizedException,
+  ValidationPipe,
+} from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { mock, mockReset } from 'jest-mock-extended'
 import * as request from 'supertest'
 
+import { AuthenticatedGuard } from '../common'
 import { PrismaModule } from '../prisma/prisma.module'
 import { TestUtils } from '../utils'
 import { UserEntity } from './entities'
@@ -14,6 +19,7 @@ describe('UsersController', () => {
   let app: INestApplication
 
   const usersServiceMock = mock<UsersServiceInterface>()
+  const authGuardMock = mock<AuthenticatedGuard>()
 
   beforeEach(async () => {
     mockReset(usersServiceMock)
@@ -24,7 +30,10 @@ describe('UsersController', () => {
       imports: [PrismaModule],
       controllers: [UsersController],
       providers: [{ provide: UsersService, useValue: usersServiceMock }],
-    }).compile()
+    })
+      .overrideGuard(AuthenticatedGuard)
+      .useValue(authGuardMock)
+      .compile()
 
     app = module.createNestApplication()
     app.useGlobalPipes(new ValidationPipe())
@@ -113,6 +122,23 @@ describe('UsersController', () => {
           expect(body.error).toBe('Bad Request')
         })
       expect(usersServiceMock.update).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('me', () => {
+    it('should return unauthorized', async () => {
+      authGuardMock.canActivate.mockImplementationOnce(async () => {
+        throw new UnauthorizedException()
+      })
+
+      await request(app.getHttpServer()).get(`/users/me`).expect(401)
+    })
+
+    it('should return user', async () => {
+      authGuardMock.canActivate.mockResolvedValueOnce(true)
+
+      // expect '' because we are not mocking the request.user
+      await request(app.getHttpServer()).get(`/users/me`).expect(200).expect('')
     })
   })
 })
