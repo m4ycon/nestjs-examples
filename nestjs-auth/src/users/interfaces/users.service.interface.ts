@@ -2,7 +2,7 @@ import { User } from '@prisma/client'
 
 import { CreateUserDto, UpdateUserDto } from '../dto'
 
-type UserWithoutPass = Omit<User, 'password'>
+type UserProps = Pick<User, 'id' | 'displayName' | 'email'>
 
 export interface UsersServiceInterface {
   /**
@@ -10,18 +10,18 @@ export interface UsersServiceInterface {
    * @param createUserDto Data to create a user
    * @returns Returns user created
    */
-  create(createUserDto: CreateUserDto): Promise<void | UserWithoutPass>
+  create(createUserDto: CreateUserDto): Promise<void | UserProps>
 
   /**
    * Find all users in database
    */
-  findAll(): Promise<UserWithoutPass[]>
+  findAll(): Promise<UserProps[]>
 
   /**
    * Finds user with this id
    * @param id Id from the user
    */
-  findOne(id: number): Promise<UserWithoutPass>
+  findOne(id: number): Promise<UserProps>
 
   /**
    * Finds user with this email
@@ -34,10 +34,7 @@ export interface UsersServiceInterface {
    * @param id Id from the user
    * @param updateUserDto Data to be updated in database
    */
-  update(
-    id: number,
-    updateUserDto: UpdateUserDto,
-  ): Promise<void | UserWithoutPass>
+  update(id: number, updateUserDto: UpdateUserDto): Promise<void | UserProps>
 
   /**
    * Encrypts an string

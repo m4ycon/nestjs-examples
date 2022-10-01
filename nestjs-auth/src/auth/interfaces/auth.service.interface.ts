@@ -7,7 +7,9 @@ export interface AuthServiceInterface {
    * Register a valid user in the database
    * @param signUpDto Data needed to sign up user
    */
-  signup(signUpDto: SignUpDto): Promise<void | Omit<User, 'password'>>
+  signup(
+    signUpDto: SignUpDto,
+  ): Promise<void | Pick<User, 'displayName' | 'email' | 'id'>>
 
   /**
    * Login user if the credentials are valid

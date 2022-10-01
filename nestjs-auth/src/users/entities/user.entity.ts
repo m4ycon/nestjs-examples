@@ -1,5 +1,6 @@
 import { User } from '@prisma/client'
 import {
+  IsDate,
   IsEmail,
   IsNotEmpty,
   IsNumber,
@@ -26,4 +27,17 @@ export class UserEntity implements User {
   @IsString()
   @MinLength(6)
   password: string
+
+  @IsOptional()
+  @IsNotEmpty()
+  @IsString()
+  hashedRt: string
+
+  @IsNotEmpty()
+  @IsDate()
+  createdAt: Date
+
+  @IsNotEmpty()
+  @IsDate()
+  updatedAt: Date
 }

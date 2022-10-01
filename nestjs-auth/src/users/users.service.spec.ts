@@ -1,13 +1,15 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
+import { User } from '@prisma/client'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime'
 import * as bcrypt from 'bcrypt'
 
 import { PrismaModule } from '../prisma/prisma.module'
 import { PrismaService } from '../prisma/prisma.service'
 import { TestUtils } from '../utils'
-import { UserEntity } from './entities'
 import { UsersService } from './users.service'
+
+type UserProps = Pick<User, 'displayName' | 'email' | 'password'>
 
 describe('UsersService', () => {
   let service: UsersService
@@ -39,7 +41,7 @@ describe('UsersService', () => {
   })
 
   describe('create', () => {
-    let userData: Omit<UserEntity, 'id'>
+    let userData: UserProps
     beforeAll(() => {
       userData = TestUtils.genUser()
     })
@@ -88,7 +90,7 @@ describe('UsersService', () => {
   })
 
   describe('findAll', () => {
-    let userData: Omit<UserEntity, 'id'>
+    let userData: UserProps
     beforeAll(() => {
       userData = TestUtils.genUser()
     })
@@ -116,7 +118,7 @@ describe('UsersService', () => {
   })
 
   describe('findOne', () => {
-    let userData: Omit<UserEntity, 'id'>
+    let userData: UserProps
     beforeAll(() => {
       userData = TestUtils.genUser()
     })
@@ -147,7 +149,7 @@ describe('UsersService', () => {
   })
 
   describe('findByEmail', () => {
-    let userData: Omit<UserEntity, 'id'>
+    let userData: UserProps
     beforeAll(() => {
       userData = TestUtils.genUser()
     })
@@ -164,7 +166,7 @@ describe('UsersService', () => {
   })
 
   describe('update', () => {
-    let userData: Omit<UserEntity, 'id'>
+    let userData: UserProps
     beforeAll(() => {
       userData = TestUtils.genUser()
     })

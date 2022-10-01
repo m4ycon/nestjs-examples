@@ -1,5 +1,9 @@
-import { OmitType } from '@nestjs/mapped-types'
+import { PickType } from '@nestjs/mapped-types'
 
 import { UserEntity } from '../entities'
 
-export class CreateUserDto extends OmitType(UserEntity, ['id']) {}
+export class CreateUserDto extends PickType(UserEntity, [
+  'displayName',
+  'email',
+  'password',
+]) {}

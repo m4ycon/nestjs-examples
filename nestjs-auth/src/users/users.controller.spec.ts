@@ -4,16 +4,18 @@ import {
   ValidationPipe,
 } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
+import { User } from '@prisma/client'
 import { mock, mockReset } from 'jest-mock-extended'
 import * as request from 'supertest'
 
 import { AuthenticatedGuard } from '../common'
 import { PrismaModule } from '../prisma/prisma.module'
 import { TestUtils } from '../utils'
-import { UserEntity } from './entities'
 import { UsersServiceInterface } from './interfaces'
 import { UsersController } from './users.controller'
 import { UsersService } from './users.service'
+
+type UserProps = Pick<User, 'displayName' | 'email' | 'password'>
 
 describe('UsersController', () => {
   let app: INestApplication
@@ -45,7 +47,7 @@ describe('UsersController', () => {
   })
 
   describe('findAll', () => {
-    let userData: Omit<UserEntity, 'id'>
+    let userData: UserProps
     beforeAll(() => {
       userData = TestUtils.genUser()
     })
@@ -62,7 +64,7 @@ describe('UsersController', () => {
   })
 
   describe('findOne', () => {
-    let userData: Omit<UserEntity, 'id'>
+    let userData: UserProps
     beforeAll(() => {
       userData = TestUtils.genUser()
     })
@@ -82,7 +84,7 @@ describe('UsersController', () => {
   })
 
   describe('update', () => {
-    let userData: Omit<UserEntity, 'id'>
+    let userData: UserProps
     beforeAll(() => {
       userData = TestUtils.genUser()
     })
