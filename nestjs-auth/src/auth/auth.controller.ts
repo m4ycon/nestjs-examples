@@ -1,16 +1,17 @@
 import {
   Body,
   Controller,
-  Get,
   HttpCode,
   HttpStatus,
   Post,
-  Req,
+  UseGuards,
 } from '@nestjs/common'
-import { Request } from 'express'
 
+import { GetUser } from '../common'
 import { AuthService } from './auth.service'
 import { SignInDto, SignUpDto } from './dto'
+import { JwtGuard, JwtRefreshGuard } from './guards'
+import { TokenPayload } from './types'
 
 @Controller('auth')
 export class AuthController {
@@ -28,15 +29,16 @@ export class AuthController {
     return this.authService.signin(signInDto)
   }
 
-  @Get('signout')
-  async signout(@Req() request: Request) {
-    request.session.destroy(() => null)
-
-    return { message: 'Succesfully logged out' }
+  @UseGuards(JwtGuard)
+  @Post('signout')
+  async signout(@GetUser('id') userId: number) {
+    return this.authService.signout(userId)
   }
 
+  @UseGuards(JwtRefreshGuard)
   @Post('refresh')
-  async refresh(@Req() request: Request) {
-    return this.authService.refresh(request)
+  @HttpCode(HttpStatus.OK)
+  async refresh(@GetUser() user: TokenPayload & { refreshToken: string }) {
+    return this.authService.refresh(user.id, user.refreshToken)
   }
 }

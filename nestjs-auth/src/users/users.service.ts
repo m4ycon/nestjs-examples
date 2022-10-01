@@ -75,6 +75,16 @@ export class UsersService implements UsersServiceInterface {
     userId: number,
     hashedRefreshToken: string,
   ): Promise<void> {
+    if (!hashedRefreshToken) {
+      // delete the hashedRefreshToken
+      // this avoids a user spamming the database with null values
+      await this.prisma.user.updateMany({
+        where: { id: userId, NOT: { hashedRt: null } },
+        data: { hashedRt: null },
+      })
+      return
+    }
+
     await this.prisma.user.update({
       where: { id: userId },
       data: { hashedRt: hashedRefreshToken },

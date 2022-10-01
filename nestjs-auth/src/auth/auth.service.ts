@@ -2,12 +2,11 @@ import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import * as bcrypt from 'bcrypt'
-import { Request } from 'express'
 
 import { UsersService } from '../users/users.service'
 import { SignInDto, SignUpDto } from './dto'
 import { AuthServiceInterface } from './interfaces'
-import { Tokens } from './types'
+import { TokenPayload, Tokens } from './types'
 
 @Injectable()
 export class AuthService implements AuthServiceInterface {
@@ -44,12 +43,19 @@ export class AuthService implements AuthServiceInterface {
     return this.signTokensAndUpdateRefreshToken(user.id, user.email)
   }
 
-  async refresh(request: Request) {
-    throw new Error('Method not implemented.')
+  async signout(userId: number) {
+    await this.usersService.updateHashedRefreshToken(userId, null)
+    return { message: 'Succesfully logged out' }
+  }
 
-    request
-    // return this.signTokens(user.id, user.email)
-    return { accessToken: 'token', refreshToken: 'token' }
+  async refresh(userId: number, refreshToken: string): Promise<Tokens> {
+    const user = await this.usersService.getUserInfo({ id: userId })
+    if (!user) throw new UnauthorizedException('Invalid credentials')
+
+    const rtMatches = await this.compareHashes(refreshToken, user.hashedRt)
+    if (!rtMatches) throw new UnauthorizedException('Invalid credentials')
+
+    return this.signTokensAndUpdateRefreshToken(user.id, user.email)
   }
 
   async signTokensAndUpdateRefreshToken(
@@ -59,34 +65,23 @@ export class AuthService implements AuthServiceInterface {
     const tokens = await this.signTokens(userId, email)
 
     const hashedRefreshToken = await this.hashData(tokens.refreshToken)
-    console.log('hashedRefreshToken', hashedRefreshToken)
     await this.usersService.updateHashedRefreshToken(userId, hashedRefreshToken)
 
     return tokens
   }
 
   async signTokens(userId: number, email: string): Promise<Tokens> {
+    const payload: TokenPayload = { id: userId, email }
+
     const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(
-        {
-          userId,
-          email,
-        },
-        {
-          secret: this.config.get('JWT_SECRET'),
-          expiresIn: '1d',
-        },
-      ),
-      this.jwtService.signAsync(
-        {
-          userId,
-          email,
-        },
-        {
-          secret: this.config.get('JWT_RT_SECRET'),
-          expiresIn: '7d',
-        },
-      ),
+      this.jwtService.signAsync(payload, {
+        secret: this.config.get('JWT_SECRET'),
+        expiresIn: '1d',
+      }),
+      this.jwtService.signAsync(payload, {
+        secret: this.config.get('JWT_RT_SECRET'),
+        expiresIn: '7d',
+      }),
     ])
 
     return { accessToken, refreshToken }

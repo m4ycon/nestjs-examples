@@ -1,5 +1,3 @@
-import { Request } from 'express'
-
 import { SignInDto, SignUpDto } from '../dto'
 import { Tokens } from '../types'
 
@@ -20,7 +18,7 @@ export interface AuthServiceInterface {
    * Refresh the session of the user
    * @param request Request object coming from the client
    */
-  refresh(request: Request): Promise<Tokens>
+  refresh(userId: number, rt: string): Promise<Tokens>
 
   /**
    * Hash a string
