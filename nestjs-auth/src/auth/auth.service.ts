@@ -1,32 +1,102 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { JwtService } from '@nestjs/jwt'
+import * as bcrypt from 'bcrypt'
+import { Request } from 'express'
 
 import { UsersService } from '../users/users.service'
 import { SignInDto, SignUpDto } from './dto'
 import { AuthServiceInterface } from './interfaces'
+import { Tokens } from './types'
 
 @Injectable()
 export class AuthService implements AuthServiceInterface {
-  constructor(private usersService: UsersService) {}
+  constructor(
+    private usersService: UsersService,
+    private jwtService: JwtService,
+    private config: ConfigService,
+  ) {}
 
   async signup(signUpDto: SignUpDto) {
+    // passwordConfirmation is tested in the validation pipe
+    // so we can safely ignore it here
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { passwordConfirmation, ...userData } = signUpDto
+    const hashedPassword = await this.hashData(userData.password)
 
-    const user = await this.usersService.create(userData)
-    return user
+    const user = await this.usersService.create({
+      ...userData,
+      password: hashedPassword,
+    })
+
+    return this.signTokensAndUpdateRefreshToken(user.id, user.email)
   }
 
+  // used inside the local.strategy.ts
   async signin(signInDto: SignInDto) {
     const { email, password } = signInDto
-    const user = await this.usersService.findByEmail(email)
+    const user = await this.usersService.getUserInfo({ email })
     if (!user) throw new UnauthorizedException('Invalid credentials')
 
-    const passMatches = await this.usersService.comparePasswords(
-      password,
-      user.password,
-    )
+    const passMatches = await this.compareHashes(password, user.password)
     if (!passMatches) throw new UnauthorizedException('Invalid credentials')
 
-    return { id: user.id, email: user.email }
+    return this.signTokensAndUpdateRefreshToken(user.id, user.email)
+  }
+
+  async refresh(request: Request) {
+    throw new Error('Method not implemented.')
+
+    request
+    // return this.signTokens(user.id, user.email)
+    return { accessToken: 'token', refreshToken: 'token' }
+  }
+
+  async signTokensAndUpdateRefreshToken(
+    userId: number,
+    email: string,
+  ): Promise<Tokens> {
+    const tokens = await this.signTokens(userId, email)
+
+    const hashedRefreshToken = await this.hashData(tokens.refreshToken)
+    console.log('hashedRefreshToken', hashedRefreshToken)
+    await this.usersService.updateHashedRefreshToken(userId, hashedRefreshToken)
+
+    return tokens
+  }
+
+  async signTokens(userId: number, email: string): Promise<Tokens> {
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(
+        {
+          userId,
+          email,
+        },
+        {
+          secret: this.config.get('JWT_SECRET'),
+          expiresIn: '1d',
+        },
+      ),
+      this.jwtService.signAsync(
+        {
+          userId,
+          email,
+        },
+        {
+          secret: this.config.get('JWT_RT_SECRET'),
+          expiresIn: '7d',
+        },
+      ),
+    ])
+
+    return { accessToken, refreshToken }
+  }
+
+  async hashData(data: string): Promise<string> {
+    return bcrypt.hash(data, 10)
+  }
+
+  async compareHashes(data: string, hash: string): Promise<boolean> {
+    return bcrypt.compare(data, hash)
   }
 }

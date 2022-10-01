@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common'
 
-import { AuthenticatedGuard, GetUser } from '../common'
+import { AuthenticatedGuard } from '../auth/guards'
+import { GetUser } from '../common'
 import { UpdateUserDto } from './dto'
 import { UsersService } from './users.service'
 

@@ -2,11 +2,10 @@ import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { User } from '@prisma/client'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime'
-import * as bcrypt from 'bcrypt'
 
+import { TestUtils } from '../common'
 import { PrismaModule } from '../prisma/prisma.module'
 import { PrismaService } from '../prisma/prisma.service'
-import { TestUtils } from '../utils'
 import { UsersService } from './users.service'
 
 type UserProps = Pick<User, 'displayName' | 'email' | 'password'>
@@ -58,15 +57,21 @@ describe('UsersService', () => {
 
     it('should throw an error if email is already in use', async () => {
       prismaMock.user.create.mockRejectedValueOnce(
-        new PrismaClientKnownRequestError(
-          'Email is already in use',
-          'P2002',
-          '4.2.1',
-        ),
+        new PrismaClientKnownRequestError('', 'P2002', ''),
       )
 
       await expect(service.create(userData)).rejects.toBeInstanceOf(
         new BadRequestException('Email is already in use').constructor,
+      )
+    })
+
+    it('should throw an unexpected error in prisma create', async () => {
+      prismaMock.user.create.mockRejectedValueOnce(
+        new Error('Unexpected error'),
+      )
+
+      await expect(service.create(userData)).rejects.toBeInstanceOf(
+        new BadRequestException('Something went wrong').constructor,
       )
     })
 
@@ -148,19 +153,29 @@ describe('UsersService', () => {
     })
   })
 
-  describe('findByEmail', () => {
+  describe('getUserInfo', () => {
     let userData: UserProps
     beforeAll(() => {
       userData = TestUtils.genUser()
     })
 
-    it('should return a user', async () => {
+    it('should return a user found by email', async () => {
       prismaMock.user.findUnique.mockResolvedValueOnce(userData)
 
-      const response = await service.findByEmail(userData.email)
+      const response = await service.getUserInfo({ email: userData.email })
       expect(response).toMatchObject(userData)
       expect(prismaMock.user.findUnique).toHaveBeenLastCalledWith({
         where: { email: userData.email },
+      })
+    })
+
+    it('should return a user found by id', async () => {
+      prismaMock.user.findUnique.mockResolvedValueOnce(userData)
+
+      const response = await service.getUserInfo({ id: 777 })
+      expect(response).toMatchObject(userData)
+      expect(prismaMock.user.findUnique).toHaveBeenLastCalledWith({
+        where: { id: 777 },
       })
     })
   })
@@ -187,29 +202,32 @@ describe('UsersService', () => {
       prismaMock.user.update.mockRejectedValueOnce(
         new PrismaClientKnownRequestError('', 'P2025', ''),
       )
+      prismaMock._exceptionNotFound.mockReturnValueOnce(
+        new NotFoundException('User not found'),
+      )
 
-      await service.update(1, userData)
+      await expect(service.update(1, userData)).rejects.toBeInstanceOf(
+        new NotFoundException('User not found').constructor,
+      )
       expect(prismaMock._exceptionNotFound).toHaveBeenCalled()
     })
   })
 
-  describe('hashPassword', () => {
-    it('should hash a password', async () => {
-      const password = 'password'
-      const hashedPassword = await service.hashPassword(password)
-      expect(hashedPassword).toBeDefined()
-      expect(hashedPassword).not.toBe(password)
+  describe('updateHashedRefreshToken', () => {
+    let userData: UserProps
+    beforeAll(() => {
+      userData = TestUtils.genUser()
     })
-  })
 
-  describe('comparePasswords', () => {
-    it.each([false, true])('should return %p', async (value) => {
-      jest
-        .spyOn(bcrypt, 'compare')
-        .mockImplementationOnce(() => Promise.resolve(value))
+    it('should update rt from a user', async () => {
+      prismaMock.user.update.mockResolvedValueOnce(userData)
 
-      const response = await service.comparePasswords('password', '123456')
-      expect(response).toBe(value)
+      const response = await service.updateHashedRefreshToken(1, 'token')
+      expect(response).toBeUndefined()
+      expect(prismaMock.user.update).toHaveBeenLastCalledWith({
+        where: { id: 1 },
+        data: { hashedRt: 'token' },
+      })
     })
   })
 })

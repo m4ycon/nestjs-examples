@@ -5,22 +5,20 @@ import {
 } from '@nestjs/common'
 import { User } from '@prisma/client'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime'
-import * as bcrypt from 'bcrypt'
 
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateUserDto, UpdateUserDto } from './dto'
 import { UsersServiceInterface } from './interfaces'
+import { EmailOrId } from './types'
 
 @Injectable()
 export class UsersService implements UsersServiceInterface {
   constructor(private prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto) {
-    const hash = await this.hashPassword(createUserDto.password)
-
     const user = await this.prisma.user
       .create({
-        data: { ...createUserDto, password: hash },
+        data: createUserDto,
         select: { id: true, displayName: true, email: true },
       })
       .catch((e) => {
@@ -28,6 +26,7 @@ export class UsersService implements UsersServiceInterface {
           if (e.code === 'P2002')
             throw new BadRequestException('Email is already in use')
         }
+        throw new BadRequestException('Something went wrong')
       })
 
     return user
@@ -52,9 +51,10 @@ export class UsersService implements UsersServiceInterface {
     return user
   }
 
-  async findByEmail(email: string): Promise<User> {
-    const user = await this.prisma.user.findUnique({ where: { email } })
-    return user
+  getUserInfo(userIdentifier: EmailOrId): Promise<User> {
+    return this.prisma.user.findUnique({
+      where: userIdentifier,
+    })
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {
@@ -64,19 +64,20 @@ export class UsersService implements UsersServiceInterface {
         data: updateUserDto,
         select: { id: true, displayName: true, email: true },
       })
-      .catch((e) => this.prisma._exceptionNotFound(e, 'User'))
+      .catch((e) => {
+        throw this.prisma._exceptionNotFound(e, 'User')
+      })
 
     return user
   }
 
-  async hashPassword(password: string): Promise<string> {
-    const salt = await bcrypt.genSalt()
-    const hash = await bcrypt.hash(password, salt)
-    return hash
-  }
-
-  async comparePasswords(password: string, hash: string): Promise<boolean> {
-    const matches = await bcrypt.compare(password, hash)
-    return matches
+  async updateHashedRefreshToken(
+    userId: number,
+    hashedRefreshToken: string,
+  ): Promise<void> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { hashedRt: hashedRefreshToken },
+    })
   }
 }

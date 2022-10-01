@@ -1,6 +1,7 @@
 import { User } from '@prisma/client'
 
 import { CreateUserDto, UpdateUserDto } from '../dto'
+import { EmailOrId } from '../types'
 
 type UserProps = Pick<User, 'id' | 'displayName' | 'email'>
 
@@ -10,7 +11,7 @@ export interface UsersServiceInterface {
    * @param createUserDto Data to create a user
    * @returns Returns user created
    */
-  create(createUserDto: CreateUserDto): Promise<void | UserProps>
+  create(createUserDto: CreateUserDto): Promise<UserProps>
 
   /**
    * Find all users in database
@@ -24,10 +25,10 @@ export interface UsersServiceInterface {
   findOne(id: number): Promise<UserProps>
 
   /**
-   * Finds user with this email
-   * @param email Email from the user
+   * Finds user and returns all its data
+   * @param userIdentifier Email or id from the user
    */
-  findByEmail(email: string): Promise<User>
+  getUserInfo(userIdentifier: EmailOrId): Promise<User>
 
   /**
    * Updates an user
@@ -37,16 +38,12 @@ export interface UsersServiceInterface {
   update(id: number, updateUserDto: UpdateUserDto): Promise<void | UserProps>
 
   /**
-   * Encrypts an string
-   * @param password Raw password to be encrypted
-   * @returns Returns password encrypted
+   * Updates user refresh token
+   * @param userId Id from the user
+   * @param hashedRefreshToken Refresh token encrypted
    */
-  hashPassword(password: string): Promise<string>
-
-  /**
-   * @param password Raw password
-   * @param hash Encrypted password
-   * @returns Returns if password matches with hash
-   */
-  comparePasswords(password: string, hash: string): Promise<boolean>
+  updateHashedRefreshToken(
+    userId: number,
+    hashedRefreshToken: string,
+  ): Promise<void>
 }

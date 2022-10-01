@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common'
 import { PrismaClient } from '@prisma/client'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime'
 
@@ -6,8 +10,9 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime'
 export class PrismaService extends PrismaClient {
   _exceptionNotFound(e: any, entity: string) {
     if (e instanceof PrismaClientKnownRequestError) {
-      if (e.code === 'P2025') throw new NotFoundException(`${entity} not found`)
+      if (e.code === 'P2025')
+        return new NotFoundException(`${entity} not found`)
     }
-    throw new Error(e)
+    return new BadRequestException('Something went wrong')
   }
 }
