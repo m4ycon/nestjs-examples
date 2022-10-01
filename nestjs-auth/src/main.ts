@@ -3,12 +3,15 @@ import { NestFactory } from '@nestjs/core'
 import * as session from 'express-session'
 import * as passport from 'passport'
 
+import { AtGuard } from './auth/guards'
 import { AppModule } from './app.module'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
 
+  /** Global configs */
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }))
+  app.useGlobalGuards(new AtGuard()) // All routes are protected by default
 
   /** Passport session config */
   app.use(

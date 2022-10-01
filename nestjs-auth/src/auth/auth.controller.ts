@@ -7,35 +7,36 @@ import {
   UseGuards,
 } from '@nestjs/common'
 
-import { GetUser } from '../common'
+import { GetUser, Public } from '../common'
 import { AuthService } from './auth.service'
 import { SignInDto, SignUpDto } from './dto'
-import { JwtGuard, JwtRefreshGuard } from './guards'
+import { AtGuard, RtGuard } from './guards'
 import { TokenPayload } from './types'
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Public()
   @Post('signup')
   async signup(@Body() signUpDto: SignUpDto) {
     return this.authService.signup(signUpDto)
   }
 
-  // @UseGuards(LocalGuard) // this guard is responsible to sign in
+  @Public()
   @Post('signin')
   @HttpCode(HttpStatus.OK)
   async signin(@Body() signInDto: SignInDto) {
     return this.authService.signin(signInDto)
   }
 
-  @UseGuards(JwtGuard)
+  @UseGuards(AtGuard)
   @Post('signout')
   async signout(@GetUser('id') userId: number) {
     return this.authService.signout(userId)
   }
 
-  @UseGuards(JwtRefreshGuard)
+  @UseGuards(RtGuard)
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refresh(@GetUser() user: TokenPayload & { refreshToken: string }) {
