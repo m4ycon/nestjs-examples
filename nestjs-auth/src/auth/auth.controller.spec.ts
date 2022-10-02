@@ -1,4 +1,6 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common'
+import { ConfigModule } from '@nestjs/config'
+import { APP_GUARD } from '@nestjs/core'
 import { Test, TestingModule } from '@nestjs/testing'
 import { User } from '@prisma/client'
 import { mock, mockReset } from 'jest-mock-extended'
@@ -7,32 +9,42 @@ import * as request from 'supertest'
 import { TestUtils } from '../common'
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
+import { AtGuard } from './guards'
+import { AtStrategy } from './strategies'
 
 type UserProps = Pick<User, 'displayName' | 'email' | 'password'>
 
 describe('AuthController', () => {
   let app: INestApplication
   let userData: UserProps
-  // let userDataFull: User
+  let userDataFull: User
 
   const authServiceMock = mock<AuthService>()
 
   beforeEach(() => {
     mockReset(authServiceMock)
     userData = TestUtils.genUser()
-    // userDataFull = {
-    //   ...userData,
-    //   id: Math.round(Math.random() * 100),
-    //   hashedRt: '654564564',
-    //   createdAt: new Date(),
-    //   updatedAt: new Date(),
-    // }
+    userDataFull = {
+      ...userData,
+      id: Math.round(Math.random() * 100),
+      hashedRt: '654564564',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
   })
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [ConfigModule],
       controllers: [AuthController],
-      providers: [{ provide: AuthService, useValue: authServiceMock }],
+      providers: [
+        AtStrategy,
+        { provide: AuthService, useValue: authServiceMock },
+        {
+          provide: APP_GUARD,
+          useClass: AtGuard,
+        },
+      ],
     }).compile()
 
     app = module.createNestApplication()
@@ -175,6 +187,32 @@ describe('AuthController', () => {
           expect(body.error).toBe('Bad Request')
         })
       expect(authServiceMock.signup).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('signout', () => {
+    it('should return 200', async () => {
+      jest
+        .spyOn(AtGuard.prototype, 'canActivate')
+        .mockImplementationOnce((ctx) => {
+          ctx.switchToHttp().getRequest().user = { id: userDataFull.id }
+          return true
+        })
+
+      const expectedResponse = { message: 'Successfully signed out' }
+      authServiceMock.signout.mockResolvedValueOnce(expectedResponse)
+
+      await request(app.getHttpServer())
+        .post('/auth/signout')
+        .expect(200)
+        .expect(expectedResponse)
+      expect(authServiceMock.signout).toHaveBeenLastCalledWith(userDataFull.id)
+    })
+
+    it('should return 403', async () => {
+      jest.spyOn(AtGuard.prototype, 'canActivate').mockResolvedValueOnce(false)
+
+      await request(app.getHttpServer()).post('/auth/signout').expect(403)
     })
   })
 })

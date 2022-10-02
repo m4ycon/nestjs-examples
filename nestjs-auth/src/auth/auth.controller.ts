@@ -10,7 +10,7 @@ import {
 import { GetUser, Public } from '../common'
 import { AuthService } from './auth.service'
 import { SignInDto, SignUpDto } from './dto'
-import { AtGuard, RtGuard } from './guards'
+import { RtGuard } from './guards'
 import { TokenPayload } from './types'
 
 @Controller('auth')
@@ -30,8 +30,8 @@ export class AuthController {
     return this.authService.signin(signInDto)
   }
 
-  @UseGuards(AtGuard)
   @Post('signout')
+  @HttpCode(HttpStatus.OK)
   async signout(@GetUser('id') userId: number) {
     return this.authService.signout(userId)
   }
