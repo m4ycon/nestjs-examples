@@ -46,8 +46,14 @@ export class AuthController {
 
   @Post('signout')
   @HttpCode(HttpStatus.OK)
-  async signout(@GetUser('id') userId: number) {
-    return this.authService.signout(userId)
+  async signout(
+    @Res({ passthrough: true }) res: Response,
+    @GetUser('id') userId: number,
+  ) {
+    await this.authService.signout(userId)
+    this.authService.clearAuthCookies(res)
+
+    return { message: 'User signed out successfully' }
   }
 
   @Public()

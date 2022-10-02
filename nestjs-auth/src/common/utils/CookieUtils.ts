@@ -19,4 +19,8 @@ export class CookieUtils {
   static getCookieValue(req: Request, key: string): string {
     return req.cookies[key]
   }
+
+  static clearCookie(res: Response, key: string): void {
+    res.clearCookie(key)
+  }
 }

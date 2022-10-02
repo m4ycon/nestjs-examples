@@ -105,4 +105,9 @@ export class AuthService implements AuthServiceInterface {
       this.config.get('JWT_RT_EXPIRATION_TIME'),
     )
   }
+
+  clearAuthCookies(res: Response) {
+    CookieUtils.clearCookie(res, 'accessToken')
+    CookieUtils.clearCookie(res, 'refreshToken')
+  }
 }
