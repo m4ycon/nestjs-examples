@@ -19,6 +19,7 @@ describe('UsersService', () => {
       findUniqueOrThrow: jest.fn(),
       findUnique: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
     },
     _exceptionNotFound: jest.fn(),
   }
@@ -227,6 +228,17 @@ describe('UsersService', () => {
       expect(prismaMock.user.update).toHaveBeenLastCalledWith({
         where: { id: 1 },
         data: { hashedRt: 'token' },
+      })
+    })
+
+    it('should updateMany if rt param is null', async () => {
+      prismaMock.user.updateMany.mockResolvedValueOnce(userData)
+
+      const response = await service.updateHashedRefreshToken(1, null)
+      expect(response).toBeUndefined()
+      expect(prismaMock.user.updateMany).toHaveBeenLastCalledWith({
+        where: { id: 1, NOT: { hashedRt: null } },
+        data: { hashedRt: null },
       })
     })
   })
