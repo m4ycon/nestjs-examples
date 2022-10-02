@@ -1,6 +1,6 @@
 import { UnauthorizedException } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
-import { JwtModule } from '@nestjs/jwt'
+import { JwtModule, JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
 import { User } from '@prisma/client'
 import * as argon2 from 'argon2'
@@ -19,9 +19,11 @@ describe('AuthService', () => {
   let userDataFull: User
 
   const usersServiceMock = mock<UsersServiceInterface>()
+  const jwtServiceMock = mock<JwtService>()
 
   beforeEach(() => {
     mockReset(usersServiceMock)
+    mockReset(jwtServiceMock)
     userData = TestUtils.genUser()
     userDataFull = {
       ...userData,
@@ -41,6 +43,10 @@ describe('AuthService', () => {
           provide: UsersService,
           useValue: usersServiceMock,
         },
+        {
+          provide: JwtService,
+          useValue: jwtServiceMock,
+        },
       ],
     }).compile()
 
@@ -54,6 +60,7 @@ describe('AuthService', () => {
   describe('signup', () => {
     it('should return an object with tokens', async () => {
       usersServiceMock.create.mockResolvedValueOnce({ ...userData, id: 1 })
+      jwtServiceMock.signAsync.mockResolvedValue('hashed-token')
 
       const response = await service.signup({
         ...userData,
@@ -70,6 +77,7 @@ describe('AuthService', () => {
   describe('signin', () => {
     it('should return an object with tokens', async () => {
       jest.spyOn(argon2, 'verify').mockResolvedValueOnce(true)
+      jwtServiceMock.signAsync.mockResolvedValue('hashed-token')
 
       usersServiceMock.getUserInfo.mockResolvedValueOnce({
         ...userData,
@@ -137,6 +145,7 @@ describe('AuthService', () => {
   describe('refresh', () => {
     it('should return tokens', async () => {
       jest.spyOn(argon2, 'verify').mockResolvedValueOnce(true)
+      jwtServiceMock.signAsync.mockResolvedValue('hashed-token')
       usersServiceMock.getUserInfo.mockResolvedValueOnce(userDataFull)
 
       const response = await service.refresh(userDataFull.id, 'refresh-token')
@@ -200,13 +209,71 @@ describe('AuthService', () => {
     })
   })
 
-  it.todo('signTokensAndUpdateRefreshToken')
-  it.todo('signTokens')
-  it.todo('hashData')
-  it.todo('compareHashes')
+  describe('signTokensAndUpdateRefreshToken', () => {
+    it('should return tokens', async () => {
+      jwtServiceMock.signAsync.mockResolvedValue('hashed-token')
+      usersServiceMock.updateHashedRefreshToken.mockResolvedValueOnce()
+      jest.spyOn(argon2, 'hash').mockResolvedValueOnce('hashed-token')
+
+      const response = await service.signTokensAndUpdateRefreshToken(
+        userDataFull.id,
+        userDataFull.email,
+      )
+
+      expect(response).toMatchObject({
+        accessToken: expect.any(String),
+        refreshToken: expect.any(String),
+      })
+      expect(usersServiceMock.updateHashedRefreshToken).toHaveBeenCalledTimes(1)
+      expect(
+        usersServiceMock.updateHashedRefreshToken,
+      ).toHaveBeenLastCalledWith(userDataFull.id, 'hashed-token')
+    })
+  })
+
+  describe('signTokens', () => {
+    it('should return tokens', async () => {
+      jwtServiceMock.signAsync.mockResolvedValue('hashed-token')
+      const response = await service.signTokens(
+        userDataFull.id,
+        userDataFull.email,
+      )
+
+      expect(response).toMatchObject({
+        accessToken: expect.any(String),
+        refreshToken: expect.any(String),
+      })
+      expect(jwtServiceMock.signAsync).toHaveBeenCalledTimes(2)
+    })
+  })
+
+  describe('hashData', () => {
+    it('should return a hashed string', async () => {
+      jest.spyOn(argon2, 'hash').mockResolvedValueOnce('hashed-data')
+      const hashed = await service.hashData('test')
+
+      expect(hashed).toBe('hashed-data')
+    })
+  })
+
+  describe('compareHashes', () => {
+    it('should return true if hashes match', async () => {
+      jest.spyOn(argon2, 'verify').mockResolvedValueOnce(true)
+      const response = await service.compareHashes('hash', 'hash')
+
+      expect(response).toBe(true)
+    })
+
+    it('should return false if hashes do not match', async () => {
+      jest.spyOn(argon2, 'verify').mockResolvedValueOnce(false)
+      const response = await service.compareHashes('hash', 'hash')
+
+      expect(response).toBe(false)
+    })
+  })
 
   describe('setAuthCookies', () => {
-    it('should set cookies', () => {
+    it('should set auth cookies', () => {
       const response = {
         cookie: jest.fn(),
       }
@@ -243,7 +310,7 @@ describe('AuthService', () => {
   })
 
   describe('clearAuthCookies', () => {
-    it('should return an empty object', () => {
+    it('should clear auth cookies', () => {
       const res = {
         cookie: {
           accessToken: 'access-token',
