@@ -1,14 +1,13 @@
-import {
-  INestApplication,
-  UnauthorizedException,
-  ValidationPipe,
-} from '@nestjs/common'
+import { INestApplication, ValidationPipe } from '@nestjs/common'
+import { ConfigModule } from '@nestjs/config'
+import { APP_GUARD } from '@nestjs/core'
 import { Test, TestingModule } from '@nestjs/testing'
 import { User } from '@prisma/client'
 import { mock, mockReset } from 'jest-mock-extended'
 import * as request from 'supertest'
 
-import { AuthenticatedGuard } from '../auth/guards'
+import { AtGuard } from '../auth/guards'
+import { AtStrategy } from '../auth/strategies'
 import { TestUtils } from '../common'
 import { PrismaModule } from '../prisma/prisma.module'
 import { UsersServiceInterface } from './interfaces'
@@ -21,7 +20,6 @@ describe('UsersController', () => {
   let app: INestApplication
 
   const usersServiceMock = mock<UsersServiceInterface>()
-  const authGuardMock = mock<AuthenticatedGuard>()
 
   beforeEach(async () => {
     mockReset(usersServiceMock)
@@ -29,13 +27,17 @@ describe('UsersController', () => {
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [PrismaModule],
+      imports: [PrismaModule, ConfigModule],
       controllers: [UsersController],
-      providers: [{ provide: UsersService, useValue: usersServiceMock }],
-    })
-      .overrideGuard(AuthenticatedGuard)
-      .useValue(authGuardMock)
-      .compile()
+      providers: [
+        AtStrategy,
+        { provide: UsersService, useValue: usersServiceMock },
+        {
+          provide: APP_GUARD,
+          useClass: AtGuard,
+        },
+      ],
+    }).compile()
 
     app = module.createNestApplication()
     app.useGlobalPipes(new ValidationPipe())
@@ -48,7 +50,7 @@ describe('UsersController', () => {
 
   describe('findAll', () => {
     let userData: UserProps
-    beforeAll(() => {
+    beforeEach(() => {
       userData = TestUtils.genUser()
     })
 
@@ -65,7 +67,7 @@ describe('UsersController', () => {
 
   describe('findOne', () => {
     let userData: UserProps
-    beforeAll(() => {
+    beforeEach(() => {
       userData = TestUtils.genUser()
     })
 
@@ -85,7 +87,7 @@ describe('UsersController', () => {
 
   describe('update', () => {
     let userData: UserProps
-    beforeAll(() => {
+    beforeEach(() => {
       userData = TestUtils.genUser()
     })
 
@@ -128,17 +130,14 @@ describe('UsersController', () => {
   })
 
   describe('me', () => {
-    it('should return unauthorized', async () => {
-      authGuardMock.canActivate.mockImplementationOnce(async () => {
-        throw new UnauthorizedException()
-      })
+    it('should return forbidden', async () => {
+      jest.spyOn(AtGuard.prototype, 'canActivate').mockResolvedValueOnce(false)
 
-      await request(app.getHttpServer()).get(`/users/me`).expect(401)
+      await request(app.getHttpServer()).get(`/users/me`).expect(403)
     })
 
     it('should return user', async () => {
-      authGuardMock.canActivate.mockResolvedValueOnce(true)
-
+      jest.spyOn(AtGuard.prototype, 'canActivate').mockResolvedValueOnce(true)
       // expect '' because we are not mocking the request.user
       await request(app.getHttpServer()).get(`/users/me`).expect(200).expect('')
     })

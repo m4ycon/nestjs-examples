@@ -6,7 +6,7 @@ import { UsersModule } from '../users/users.module'
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
 import { SessionSerializer } from './serializers'
-import { AtStrategy, LocalStrategy, RtStrategy } from './strategies'
+import { AtStrategy, RtStrategy } from './strategies'
 
 @Module({
   imports: [
@@ -15,12 +15,6 @@ import { AtStrategy, LocalStrategy, RtStrategy } from './strategies'
     JwtModule.register({}),
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    LocalStrategy,
-    SessionSerializer,
-    AtStrategy,
-    RtStrategy,
-  ],
+  providers: [AuthService, SessionSerializer, AtStrategy, RtStrategy],
 })
 export class AuthModule {}
