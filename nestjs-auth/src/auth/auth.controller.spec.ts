@@ -9,7 +9,7 @@ import * as request from 'supertest'
 import { TestUtils } from '../common'
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
-import { AtGuard } from './guards'
+import { AtGuard, RtGuard } from './guards'
 import { AtStrategy } from './strategies'
 
 type UserProps = Pick<User, 'displayName' | 'email' | 'password'>
@@ -191,7 +191,7 @@ describe('AuthController', () => {
   })
 
   describe('signout', () => {
-    it('should return 200', async () => {
+    it('should return a successs message', async () => {
       jest
         .spyOn(AtGuard.prototype, 'canActivate')
         .mockImplementationOnce((ctx) => {
@@ -213,6 +213,38 @@ describe('AuthController', () => {
       jest.spyOn(AtGuard.prototype, 'canActivate').mockResolvedValueOnce(false)
 
       await request(app.getHttpServer()).post('/auth/signout').expect(403)
+    })
+  })
+
+  describe('refresh', () => {
+    it('should return tokens', async () => {
+      jest
+        .spyOn(RtGuard.prototype, 'canActivate')
+        .mockImplementationOnce((ctx) => {
+          ctx.switchToHttp().getRequest().user = {
+            id: userDataFull.id,
+            refreshToken: userDataFull.hashedRt,
+          }
+          return true
+        })
+
+      const expectedResponse = { accessToken: '123', refreshToken: '456' }
+      authServiceMock.refresh.mockResolvedValueOnce(expectedResponse)
+
+      await request(app.getHttpServer())
+        .post('/auth/refresh')
+        .expect(200)
+        .expect(expectedResponse)
+      expect(authServiceMock.refresh).toHaveBeenLastCalledWith(
+        userDataFull.id,
+        userDataFull.hashedRt,
+      )
+    })
+
+    it('should return 403', async () => {
+      jest.spyOn(RtGuard.prototype, 'canActivate').mockResolvedValueOnce(false)
+
+      await request(app.getHttpServer()).post('/auth/refresh').expect(403)
     })
   })
 })
