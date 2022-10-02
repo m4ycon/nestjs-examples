@@ -45,7 +45,7 @@ export class AuthService implements AuthServiceInterface {
 
   async signout(userId: number) {
     await this.usersService.updateHashedRefreshToken(userId, null)
-    return { message: 'Succesfully logged out' }
+    return { message: 'Successfully logged out' }
   }
 
   async refresh(userId: number, refreshToken: string): Promise<Tokens> {
