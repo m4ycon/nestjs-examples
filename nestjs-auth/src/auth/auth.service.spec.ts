@@ -201,8 +201,8 @@ describe('AuthService', () => {
   })
 
   // TODO
-  // describe('signTokensAndUpdateRefreshToken', () => null)
-  // describe('signTokens', () => null)
-  // describe('hashData', () => null)
-  // describe('compareHashes', () => null)
+  describe.skip('signTokensAndUpdateRefreshToken', () => undefined)
+  describe.skip('signTokens', () => undefined)
+  describe.skip('hashData', () => undefined)
+  describe.skip('compareHashes', () => undefined)
 })
