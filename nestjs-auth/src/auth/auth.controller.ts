@@ -4,8 +4,10 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Res,
   UseGuards,
 } from '@nestjs/common'
+import { Response } from 'express'
 
 import { GetUser, Public } from '../common'
 import { AuthService } from './auth.service'
@@ -19,15 +21,27 @@ export class AuthController {
 
   @Public()
   @Post('signup')
-  async signup(@Body() signUpDto: SignUpDto) {
-    return this.authService.signup(signUpDto)
+  async signup(
+    @Res({ passthrough: true }) res: Response,
+    @Body() signUpDto: SignUpDto,
+  ): Promise<{ message: string }> {
+    const tokens = await this.authService.signup(signUpDto)
+    this.authService.setAuthCookies(res, tokens)
+
+    return { message: 'User signed up successfully' }
   }
 
   @Public()
   @Post('signin')
   @HttpCode(HttpStatus.OK)
-  async signin(@Body() signInDto: SignInDto) {
-    return this.authService.signin(signInDto)
+  async signin(
+    @Res({ passthrough: true }) res: Response,
+    @Body() signInDto: SignInDto,
+  ): Promise<{ message: string }> {
+    const tokens = await this.authService.signin(signInDto)
+    this.authService.setAuthCookies(res, tokens)
+
+    return { message: 'User signed in successfully' }
   }
 
   @Post('signout')
@@ -40,7 +54,13 @@ export class AuthController {
   @UseGuards(RtGuard)
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  async refresh(@GetUser() user: TokenPayload & { refreshToken: string }) {
-    return this.authService.refresh(user.id, user.refreshToken)
+  async refresh(
+    @Res({ passthrough: true }) res: Response,
+    @GetUser() user: TokenPayload & { refreshToken: string },
+  ): Promise<{ message: string }> {
+    const tokens = await this.authService.refresh(user.id, user.refreshToken)
+    this.authService.setAuthCookies(res, tokens)
+
+    return { message: 'User refreshed successfully' }
   }
 }

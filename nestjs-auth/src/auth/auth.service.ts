@@ -2,7 +2,9 @@ import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import * as argon2 from 'argon2'
+import { Response } from 'express'
 
+import { CookieUtils } from '../common'
 import { UsersService } from '../users/users.service'
 import { SignInDto, SignUpDto } from './dto'
 import { AuthServiceInterface } from './interfaces'
@@ -77,11 +79,11 @@ export class AuthService implements AuthServiceInterface {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
         secret: this.config.get('JWT_SECRET'),
-        expiresIn: '1d',
+        expiresIn: parseInt(this.config.get('JWT_EXPIRATION_TIME')),
       }),
       this.jwtService.signAsync(payload, {
         secret: this.config.get('JWT_RT_SECRET'),
-        expiresIn: '7d',
+        expiresIn: parseInt(this.config.get('JWT_RT_EXPIRATION_TIME')),
       }),
     ])
 
@@ -94,5 +96,13 @@ export class AuthService implements AuthServiceInterface {
 
   async compareHashes(data: string, hash: string): Promise<boolean> {
     return argon2.verify(hash, data)
+  }
+
+  setAuthCookies(res: Response, tokens: Tokens) {
+    CookieUtils.setHeaderWithCookie(
+      res,
+      tokens,
+      this.config.get('JWT_RT_EXPIRATION_TIME'),
+    )
   }
 }

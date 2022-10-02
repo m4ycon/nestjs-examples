@@ -58,15 +58,14 @@ describe('AuthController', () => {
 
   describe('signup', () => {
     it('should return tokens', async () => {
-      const expectedResponse = { accessToken: '123', refreshToken: '456' }
-
-      authServiceMock.signup.mockResolvedValueOnce(expectedResponse)
+      const tokens = { accessToken: '123', refreshToken: '456' }
+      authServiceMock.signup.mockResolvedValueOnce(tokens)
 
       const response = await request(app.getHttpServer())
         .post('/auth/signup')
         .send({ ...userData, passwordConfirmation: userData.password })
         .expect(201)
-      expect(response.body).toEqual(expectedResponse)
+      expect(response.body).toEqual({ message: 'User signed up successfully' })
     })
 
     it.each([
@@ -122,9 +121,8 @@ describe('AuthController', () => {
         },
       ],
     ])('%s', async (message, requestInput) => {
-      const expectedResponse = { accessToken: '123', refreshToken: '456' }
-
-      authServiceMock.signup.mockResolvedValueOnce(expectedResponse)
+      const tokens = { accessToken: '123', refreshToken: '456' }
+      authServiceMock.signup.mockResolvedValueOnce(tokens)
 
       await request(app.getHttpServer())
         .post('/auth/signup')
@@ -141,15 +139,14 @@ describe('AuthController', () => {
 
   describe('signin', () => {
     it('should return tokens', async () => {
-      const expectedResponse = { accessToken: '123', refreshToken: '456' }
-
-      authServiceMock.signin.mockResolvedValueOnce(expectedResponse)
+      const tokens = { accessToken: '123', refreshToken: '456' }
+      authServiceMock.signin.mockResolvedValueOnce(tokens)
 
       const response = await request(app.getHttpServer())
         .post('/auth/signin')
         .send({ email: userData.email, password: userData.password })
         .expect(200)
-      expect(response.body).toEqual(expectedResponse)
+      expect(response.body).toEqual({ message: 'User signed in successfully' })
     })
 
     it.each([
@@ -173,9 +170,8 @@ describe('AuthController', () => {
         },
       ],
     ])('%s', async (message, requestInput) => {
-      const expectedResponse = { accessToken: '123', refreshToken: '456' }
-
-      authServiceMock.signin.mockResolvedValueOnce(expectedResponse)
+      const tokens = { accessToken: '123', refreshToken: '456' }
+      authServiceMock.signin.mockResolvedValueOnce(tokens)
 
       await request(app.getHttpServer())
         .post('/auth/signin')
@@ -228,13 +224,13 @@ describe('AuthController', () => {
           return true
         })
 
-      const expectedResponse = { accessToken: '123', refreshToken: '456' }
-      authServiceMock.refresh.mockResolvedValueOnce(expectedResponse)
+      const tokens = { accessToken: '123', refreshToken: '456' }
+      authServiceMock.refresh.mockResolvedValueOnce(tokens)
 
       await request(app.getHttpServer())
         .post('/auth/refresh')
         .expect(200)
-        .expect(expectedResponse)
+        .expect({ message: 'User refreshed successfully' })
       expect(authServiceMock.refresh).toHaveBeenLastCalledWith(
         userDataFull.id,
         userDataFull.hashedRt,
