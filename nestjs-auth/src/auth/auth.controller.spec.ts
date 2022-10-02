@@ -195,7 +195,7 @@ describe('AuthController', () => {
           return true
         })
 
-      const expectedResponse = { message: 'Successfully signed out' }
+      const expectedResponse = { message: 'User signed out successfully' }
       authServiceMock.signout.mockResolvedValueOnce(expectedResponse)
 
       await request(app.getHttpServer())

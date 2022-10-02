@@ -200,9 +200,62 @@ describe('AuthService', () => {
     })
   })
 
-  // TODO
-  describe.skip('signTokensAndUpdateRefreshToken', () => undefined)
-  describe.skip('signTokens', () => undefined)
-  describe.skip('hashData', () => undefined)
-  describe.skip('compareHashes', () => undefined)
+  it.todo('signTokensAndUpdateRefreshToken')
+  it.todo('signTokens')
+  it.todo('hashData')
+  it.todo('compareHashes')
+
+  describe('setAuthCookies', () => {
+    it('should set cookies', () => {
+      const response = {
+        cookie: jest.fn(),
+      }
+
+      const tokens = {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      }
+
+      service.setAuthCookies(response as any, tokens)
+
+      expect(response.cookie).toHaveBeenCalledTimes(2)
+      expect(response.cookie).toHaveBeenNthCalledWith(
+        1,
+        'accessToken',
+        tokens.accessToken,
+        {
+          httpOnly: true,
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+          path: '/',
+        },
+      )
+      expect(response.cookie).toHaveBeenNthCalledWith(
+        2,
+        'refreshToken',
+        tokens.refreshToken,
+        {
+          httpOnly: true,
+          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+          path: '/',
+        },
+      )
+    })
+  })
+
+  describe('clearAuthCookies', () => {
+    it('should return an empty object', () => {
+      const res = {
+        cookie: {
+          accessToken: 'access-token',
+          refreshToken: 'refresh-token',
+        },
+        clearCookie: jest.fn(),
+      }
+      service.clearAuthCookies(res as any)
+
+      expect(res.clearCookie).toHaveBeenCalledTimes(2)
+      expect(res.clearCookie).toHaveBeenNthCalledWith(1, 'accessToken')
+      expect(res.clearCookie).toHaveBeenNthCalledWith(2, 'refreshToken')
+    })
+  })
 })
