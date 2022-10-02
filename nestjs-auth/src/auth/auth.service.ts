@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
-import * as bcrypt from 'bcrypt'
+import * as argon2 from 'argon2'
 
 import { UsersService } from '../users/users.service'
 import { SignInDto, SignUpDto } from './dto'
@@ -50,7 +50,8 @@ export class AuthService implements AuthServiceInterface {
 
   async refresh(userId: number, refreshToken: string): Promise<Tokens> {
     const user = await this.usersService.getUserInfo({ id: userId })
-    if (!user) throw new UnauthorizedException('Invalid credentials')
+    if (!user || !user.hashedRt)
+      throw new UnauthorizedException('Invalid credentials')
 
     const rtMatches = await this.compareHashes(refreshToken, user.hashedRt)
     if (!rtMatches) throw new UnauthorizedException('Invalid credentials')
@@ -88,10 +89,10 @@ export class AuthService implements AuthServiceInterface {
   }
 
   async hashData(data: string): Promise<string> {
-    return bcrypt.hash(data, 10)
+    return argon2.hash(data)
   }
 
   async compareHashes(data: string, hash: string): Promise<boolean> {
-    return bcrypt.compare(data, hash)
+    return argon2.verify(hash, data)
   }
 }
