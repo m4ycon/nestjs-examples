@@ -45,7 +45,7 @@ describe('AuthController', () => {
   })
 
   describe('signup', () => {
-    it('should return a user', async () => {
+    it('should return tokens', async () => {
       const expectedResponse = { accessToken: '123', refreshToken: '456' }
 
       authServiceMock.signup.mockResolvedValueOnce(expectedResponse)
@@ -116,6 +116,57 @@ describe('AuthController', () => {
 
       await request(app.getHttpServer())
         .post('/auth/signup')
+        .send(requestInput)
+        .expect((res) => {
+          const body = res.body
+          expect(body.statusCode).toBe(400)
+          expect(body.message).toEqual(expect.any(Array))
+          expect(body.error).toBe('Bad Request')
+        })
+      expect(authServiceMock.signup).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('signin', () => {
+    it('should return tokens', async () => {
+      const expectedResponse = { accessToken: '123', refreshToken: '456' }
+
+      authServiceMock.signin.mockResolvedValueOnce(expectedResponse)
+
+      const response = await request(app.getHttpServer())
+        .post('/auth/signin')
+        .send({ email: userData.email, password: userData.password })
+        .expect(200)
+      expect(response.body).toEqual(expectedResponse)
+    })
+
+    it.each([
+      [
+        'should return 400 as body is missing email',
+        {
+          password: '123456',
+        },
+      ],
+      [
+        'should return 400 as body is missing password',
+        {
+          email: 'test@test.com',
+        },
+      ],
+      [
+        'should return 400 as email is invalid',
+        {
+          email: 'test',
+          password: '123456',
+        },
+      ],
+    ])('%s', async (message, requestInput) => {
+      const expectedResponse = { accessToken: '123', refreshToken: '456' }
+
+      authServiceMock.signin.mockResolvedValueOnce(expectedResponse)
+
+      await request(app.getHttpServer())
+        .post('/auth/signin')
         .send(requestInput)
         .expect((res) => {
           const body = res.body
