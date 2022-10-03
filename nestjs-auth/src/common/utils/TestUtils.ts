@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker'
 
-import { UserEntity } from '../../users/entities'
+import { UserEntity } from '../../entities'
 
 export class TestUtils {
   static genUser(): Pick<UserEntity, 'displayName' | 'email' | 'password'> {
