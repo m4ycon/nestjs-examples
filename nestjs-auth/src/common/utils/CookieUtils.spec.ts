@@ -1,4 +1,4 @@
-import { randomUUID } from 'crypto'
+import { randomInt, randomUUID } from 'crypto'
 
 import { CookieUtils } from './CookieUtils'
 
@@ -21,17 +21,17 @@ describe('CookieUtils', () => {
         userId: randomUUID(),
         email: randomUUID(),
       }
-      const maxAge = 60 * 60 * 24 * 7
+      const maxAge = randomInt(1000)
 
       CookieUtils.setHeaderWithCookie(res, payload, maxAge)
       expect(res.cookie).toHaveBeenNthCalledWith(1, 'userId', payload.userId, {
         httpOnly: true,
-        maxAge: 604800000,
+        maxAge: maxAge * 1000,
         path: '/',
       })
       expect(res.cookie).toHaveBeenNthCalledWith(2, 'email', payload.email, {
         httpOnly: true,
-        maxAge: 604800000,
+        maxAge: maxAge * 1000,
         path: '/',
       })
     })
