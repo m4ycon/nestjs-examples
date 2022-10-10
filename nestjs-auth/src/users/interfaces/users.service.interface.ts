@@ -1,49 +1,33 @@
-import { User } from '@prisma/client'
-
-import { CreateUserDto, UpdateUserDto } from '../dto'
-import { EmailOrId } from '../types'
-
-type UserProps = Pick<User, 'id' | 'displayName' | 'email'>
+import { UserEntity } from '../../entities'
+import { CreateUserDto } from '../dto'
 
 export interface UsersServiceInterface {
   /**
-   * Creates an User
-   * @param createUserDto Data to create a user
-   * @returns Returns user created
+   * Creates a new user
+   * @param createUserDto Data to create a new user
+   * @returns The created user
    */
-  create(createUserDto: CreateUserDto): Promise<UserProps>
+  create(
+    createUserDto: CreateUserDto,
+  ): Promise<Pick<UserEntity, 'email' | 'id'>>
 
   /**
-   * Find all users in database
+   * Finds a user by id or email
+   * @param where Id or email of the user
+   * @returns The user or undefined if not found
    */
-  findAll(): Promise<UserProps[]>
+  findOne(where: {
+    id?: number
+    email?: string
+  }): Promise<UserEntity | undefined>
 
   /**
-   * Finds user with this id
-   * @param id Id from the user
-   */
-  findOne(id: number): Promise<UserProps>
-
-  /**
-   * Finds user and returns all its data
-   * @param userIdentifier Email or id from the user
-   */
-  getUserInfo(userIdentifier: EmailOrId): Promise<User>
-
-  /**
-   * Updates an user
-   * @param id Id from the user
-   * @param updateUserDto Data to be updated in database
-   */
-  update(id: number, updateUserDto: UpdateUserDto): Promise<void | UserProps>
-
-  /**
-   * Updates user refresh token
-   * @param userId Id from the user
-   * @param hashedRefreshToken Refresh token encrypted
+   * Updates the hashed refresh token of a user
+   * @param userId Id of the user
+   * @param hashedToken Hashed refresh token
    */
   updateHashedRefreshToken(
     userId: number,
-    hashedRefreshToken: string,
+    hashedToken: string | null,
   ): Promise<void>
 }

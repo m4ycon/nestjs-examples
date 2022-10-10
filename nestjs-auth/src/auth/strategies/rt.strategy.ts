@@ -4,27 +4,25 @@ import { PassportStrategy } from '@nestjs/passport'
 import { Request } from 'express'
 import { ExtractJwt, Strategy } from 'passport-jwt'
 
-import { CookieUtils } from '../../common'
+import { CookieUtils } from '../../common/utils'
+import { TokenPayload } from '../types'
 
 @Injectable()
 export class RtStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
-  constructor(config: ConfigService) {
+  constructor(configService: ConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-        (req: Request) => {
-          return CookieUtils.getCookieValue(req, 'refreshToken')
-        },
+        (req) => CookieUtils.getCookieValue(req, 'refreshToken'),
       ]),
       ignoreExpiration: false,
-      secretOrKey: config.get('JWT_RT_SECRET'),
+      secretOrKey: configService.get('JWT_RT_SECRET'),
       passReqToCallback: true,
     })
   }
 
-  async validate(req: Request, payload: any) {
+  async validate(req: Request, payload: TokenPayload) {
     const refreshToken = CookieUtils.getCookieValue(req, 'refreshToken')
 
-    // request.user = payload
     return { ...payload, refreshToken }
   }
 }

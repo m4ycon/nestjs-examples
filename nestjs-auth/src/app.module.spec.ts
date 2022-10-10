@@ -2,9 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 
 import { AppModule } from './app.module'
 
-// this test is mainly made for catching import errors
-// module bad imports
-describe('AppController', () => {
+describe('AppModule', () => {
   let appModule: AppModule
 
   beforeEach(async () => {

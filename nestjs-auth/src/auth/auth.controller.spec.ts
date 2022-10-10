@@ -2,38 +2,40 @@ import { INestApplication, ValidationPipe } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { APP_GUARD } from '@nestjs/core'
 import { Test, TestingModule } from '@nestjs/testing'
-import { User } from '@prisma/client'
 import { mock, mockReset } from 'jest-mock-extended'
 import * as request from 'supertest'
 
-import { TestUtils } from '../common'
+import { TestUtils } from '../common/utils'
+import { UserEntity } from '../entities'
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
 import { AtGuard, RtGuard } from './guards'
 import { AtStrategy } from './strategies'
+import { Tokens } from './types'
 
-type UserProps = Pick<User, 'displayName' | 'email' | 'password'>
+type UserProps = Pick<UserEntity, 'email' | 'password'>
 
 describe('AuthController', () => {
   let app: INestApplication
   let userData: UserProps
-  let userDataFull: User
+  let userDataFull: UserEntity
+  let tokensData: Tokens
+
+  const rtGuardMock = { canActivate: jest.fn() }
 
   const authServiceMock = mock<AuthService>()
 
-  beforeEach(() => {
+  beforeEach(async () => {
     mockReset(authServiceMock)
-    userData = TestUtils.genUser()
-    userDataFull = {
-      ...userData,
-      id: Math.round(Math.random() * 100),
-      hashedRt: '654564564',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
-  })
+    jest.restoreAllMocks()
 
-  beforeAll(async () => {
+    tokensData = TestUtils.genTokens()
+    userDataFull = TestUtils.genUser()
+    userData = {
+      email: userDataFull.email,
+      password: userDataFull.password,
+    }
+
     const module: TestingModule = await Test.createTestingModule({
       imports: [ConfigModule],
       controllers: [AuthController],
@@ -45,7 +47,10 @@ describe('AuthController', () => {
           useClass: AtGuard,
         },
       ],
-    }).compile()
+    })
+      .overrideGuard(RtGuard)
+      .useValue(rtGuardMock)
+      .compile()
 
     app = module.createNestApplication()
     app.useGlobalPipes(new ValidationPipe())
@@ -57,22 +62,22 @@ describe('AuthController', () => {
   })
 
   describe('signup', () => {
-    it('should return tokens', async () => {
-      const tokens = { accessToken: '123', refreshToken: '456' }
-      authServiceMock.signup.mockResolvedValueOnce(tokens)
+    beforeEach(() => {
+      authServiceMock.signup.mockResolvedValueOnce(tokensData)
+    })
 
+    it('should return tokens', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/signup')
         .send({ ...userData, passwordConfirmation: userData.password })
         .expect(201)
-      expect(response.body).toEqual({ message: 'User signed up successfully' })
+      expect(response.body).toEqual({ message: 'Sign up successfully' })
     })
 
     it.each([
       [
         'should return 400 as body is missing email',
         {
-          displayName: 'test',
           password: '123456',
           passwordConfirmation: '123456',
         },
@@ -80,7 +85,6 @@ describe('AuthController', () => {
       [
         'should return 400 as body is missing password',
         {
-          displayName: 'test',
           email: 'test@test.com',
           passwordConfirmation: '123456',
         },
@@ -88,7 +92,6 @@ describe('AuthController', () => {
       [
         'should return 400 as body is missing passwordConfirmation',
         {
-          displayName: 'test',
           email: 'test@test.com',
           password: '123456',
         },
@@ -96,7 +99,6 @@ describe('AuthController', () => {
       [
         "should return 400 as password and passwordConfirmation don't match",
         {
-          displayName: 'test',
           email: 'test@test.com',
           password: '12345',
           passwordConfirmation: '123456',
@@ -105,7 +107,6 @@ describe('AuthController', () => {
       [
         'should return 400 as email is invalid',
         {
-          displayName: 'test',
           email: 'test',
           password: '12345',
           passwordConfirmation: '123456',
@@ -114,16 +115,12 @@ describe('AuthController', () => {
       [
         'should return 400 as password is too short',
         {
-          displayName: 'test',
           email: 'test',
           password: '12345',
           passwordConfirmation: '12345',
         },
       ],
     ])('%s', async (message, requestInput) => {
-      const tokens = { accessToken: '123', refreshToken: '456' }
-      authServiceMock.signup.mockResolvedValueOnce(tokens)
-
       await request(app.getHttpServer())
         .post('/auth/signup')
         .send(requestInput)
@@ -138,15 +135,16 @@ describe('AuthController', () => {
   })
 
   describe('signin', () => {
-    it('should return tokens', async () => {
-      const tokens = { accessToken: '123', refreshToken: '456' }
-      authServiceMock.signin.mockResolvedValueOnce(tokens)
+    beforeEach(() => {
+      authServiceMock.signin.mockResolvedValueOnce(tokensData)
+    })
 
+    it('should return tokens', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/signin')
         .send({ email: userData.email, password: userData.password })
         .expect(200)
-      expect(response.body).toEqual({ message: 'User signed in successfully' })
+      expect(response.body).toEqual({ message: 'Sign in successfully' })
     })
 
     it.each([
@@ -170,9 +168,6 @@ describe('AuthController', () => {
         },
       ],
     ])('%s', async (message, requestInput) => {
-      const tokens = { accessToken: '123', refreshToken: '456' }
-      authServiceMock.signin.mockResolvedValueOnce(tokens)
-
       await request(app.getHttpServer())
         .post('/auth/signin')
         .send(requestInput)
@@ -187,58 +182,73 @@ describe('AuthController', () => {
   })
 
   describe('signout', () => {
-    it('should return a successs message', async () => {
-      jest
-        .spyOn(AtGuard.prototype, 'canActivate')
-        .mockImplementationOnce((ctx) => {
-          ctx.switchToHttp().getRequest().user = { id: userDataFull.id }
-          return true
-        })
+    let canActivateAtGuard: jest.SpyInstance
 
-      const expectedResponse = { message: 'User signed out successfully' }
-      authServiceMock.signout.mockResolvedValueOnce(expectedResponse)
+    beforeEach(() => {
+      canActivateAtGuard = jest.spyOn(AtGuard.prototype, 'canActivate')
+    })
+
+    it('should return a successs message', async () => {
+      canActivateAtGuard.mockImplementationOnce((ctx) => {
+        ctx.switchToHttp().getRequest().user = { id: userDataFull.id }
+        return true
+      })
+
+      authServiceMock.signout.mockResolvedValueOnce()
 
       await request(app.getHttpServer())
         .post('/auth/signout')
         .expect(200)
-        .expect(expectedResponse)
+        .expect({ message: 'Sign out successfully' })
       expect(authServiceMock.signout).toHaveBeenLastCalledWith(userDataFull.id)
     })
 
     it('should return 403', async () => {
-      jest.spyOn(AtGuard.prototype, 'canActivate').mockResolvedValueOnce(false)
+      canActivateAtGuard.mockResolvedValueOnce(false)
 
       await request(app.getHttpServer()).post('/auth/signout').expect(403)
     })
   })
 
   describe('refresh', () => {
-    it('should return tokens', async () => {
-      jest
-        .spyOn(RtGuard.prototype, 'canActivate')
-        .mockImplementationOnce((ctx) => {
+    describe('when refresh token is valid', () => {
+      beforeEach(() => {
+        rtGuardMock.canActivate.mockImplementation((ctx) => {
           ctx.switchToHttp().getRequest().user = {
-            id: userDataFull.id,
-            refreshToken: userDataFull.hashedRt,
+            userId: userDataFull.id,
+            refreshToken: tokensData.refreshToken,
           }
           return true
         })
+        authServiceMock.refresh.mockResolvedValueOnce(tokensData)
+      })
 
-      const tokens = { accessToken: '123', refreshToken: '456' }
-      authServiceMock.refresh.mockResolvedValueOnce(tokens)
+      it('should return tokens', async () => {
+        await request(app.getHttpServer())
+          .post('/auth/refresh')
+          .expect(200)
+          .expect({ message: 'Refresh successfully' })
+        expect(authServiceMock.refresh).toHaveBeenLastCalledWith(
+          userDataFull.id,
+          tokensData.refreshToken,
+        )
+      })
 
-      await request(app.getHttpServer())
-        .post('/auth/refresh')
-        .expect(200)
-        .expect({ message: 'User refreshed successfully' })
-      expect(authServiceMock.refresh).toHaveBeenLastCalledWith(
-        userDataFull.id,
-        userDataFull.hashedRt,
-      )
+      it('should set tokens on cookies', async () => {
+        await request(app.getHttpServer())
+          .post('/auth/refresh')
+          .expect(200)
+          .expect({ message: 'Refresh successfully' })
+
+        expect(authServiceMock.setAuthCookies).toHaveBeenLastCalledWith(
+          expect.any(Object),
+          tokensData,
+        )
+      })
     })
 
-    it('should return 403', async () => {
-      jest.spyOn(RtGuard.prototype, 'canActivate').mockResolvedValueOnce(false)
+    it('should return 403 if refresh token is invalid', async () => {
+      rtGuardMock.canActivate.mockResolvedValueOnce(false)
 
       await request(app.getHttpServer()).post('/auth/refresh').expect(403)
     })

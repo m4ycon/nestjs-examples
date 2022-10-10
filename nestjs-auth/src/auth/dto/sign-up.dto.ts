@@ -1,16 +1,13 @@
-import { PickType } from '@nestjs/mapped-types'
+import { ApiProperty } from '@nestjs/swagger'
 import { IsNotEmpty, IsString } from 'class-validator'
 
 import { Match } from '../../common'
-import { UserEntity } from '../../entities'
+import { CreateUserDto } from '../../users/dto'
 
-export class SignUpDto extends PickType(UserEntity, [
-  'email',
-  'password',
-  'displayName',
-]) {
-  @IsNotEmpty()
+export class SignUpDto extends CreateUserDto {
+  @ApiProperty()
   @IsString()
+  @IsNotEmpty()
   @Match('password')
   passwordConfirmation: string
 }

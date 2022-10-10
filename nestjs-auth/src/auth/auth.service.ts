@@ -4,7 +4,7 @@ import { JwtService } from '@nestjs/jwt'
 import * as argon2 from 'argon2'
 import { Response } from 'express'
 
-import { CookieUtils } from '../common'
+import { CookieUtils } from '../common/utils'
 import { UsersService } from '../users/users.service'
 import { SignInDto, SignUpDto } from './dto'
 import { AuthServiceInterface } from './interfaces'
@@ -12,102 +12,121 @@ import { TokenPayload, Tokens } from './types'
 
 @Injectable()
 export class AuthService implements AuthServiceInterface {
+  COOKIES_NAMES: Tokens
+
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
-    private config: ConfigService,
-  ) {}
+    private configService: ConfigService,
+  ) {
+    this.COOKIES_NAMES = {
+      accessToken: this.configService.get('JWT_AT_COOKIE_NAME'),
+      refreshToken: this.configService.get('JWT_RT_COOKIE_NAME'),
+    }
+  }
 
   async signup(signUpDto: SignUpDto) {
-    // passwordConfirmation is tested in the validation pipe
-    // so we can safely ignore it here
+    const hash = await this.hashData(signUpDto.password)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { passwordConfirmation, ...userData } = signUpDto
-    const hashedPassword = await this.hashData(userData.password)
 
     const user = await this.usersService.create({
       ...userData,
-      password: hashedPassword,
+      password: hash,
     })
 
-    return this.signTokensAndUpdateRefreshToken(user.id, user.email)
+    return this.updateRtAndGetNewTokens(user.id, user.email)
   }
 
-  // used inside the local.strategy.ts
   async signin(signInDto: SignInDto) {
-    const { email, password } = signInDto
-    const user = await this.usersService.getUserInfo({ email })
+    const user = await this.usersService.findOne({
+      email: signInDto.email,
+    })
     if (!user) throw new UnauthorizedException('Invalid credentials')
 
-    const passMatches = await this.compareHashes(password, user.password)
-    if (!passMatches) throw new UnauthorizedException('Invalid credentials')
+    const passwordMatch = await this.compareHash(
+      signInDto.password,
+      user.password,
+    )
+    if (!passwordMatch) throw new UnauthorizedException('Invalid credentials')
 
-    return this.signTokensAndUpdateRefreshToken(user.id, user.email)
+    return this.updateRtAndGetNewTokens(user.id, user.email)
   }
 
   async signout(userId: number) {
     await this.usersService.updateHashedRefreshToken(userId, null)
-    return { message: 'Successfully logged out' }
   }
 
-  async refresh(userId: number, refreshToken: string): Promise<Tokens> {
-    const user = await this.usersService.getUserInfo({ id: userId })
+  async refresh(userId: number, refreshToken: string) {
+    const user = await this.usersService.findOne({ id: userId })
     if (!user || !user.hashedRt)
       throw new UnauthorizedException('Invalid credentials')
 
-    const rtMatches = await this.compareHashes(refreshToken, user.hashedRt)
-    if (!rtMatches) throw new UnauthorizedException('Invalid credentials')
+    const rtMatch = await this.compareHash(refreshToken, user.hashedRt)
+    if (!rtMatch) throw new UnauthorizedException('Invalid credentials')
 
-    return this.signTokensAndUpdateRefreshToken(user.id, user.email)
+    return this.updateRtAndGetNewTokens(user.id, user.email)
   }
 
-  async signTokensAndUpdateRefreshToken(
+  async updateRtAndGetNewTokens(
     userId: number,
     email: string,
   ): Promise<Tokens> {
     const tokens = await this.signTokens(userId, email)
-
-    const hashedRefreshToken = await this.hashData(tokens.refreshToken)
-    await this.usersService.updateHashedRefreshToken(userId, hashedRefreshToken)
+    await this.updateRefreshToken(userId, tokens.refreshToken)
 
     return tokens
   }
 
+  async updateRefreshToken(userId: number, refreshToken: string) {
+    const hashedRt = await this.hashData(refreshToken)
+    await this.usersService.updateHashedRefreshToken(userId, hashedRt)
+  }
+
   async signTokens(userId: number, email: string): Promise<Tokens> {
-    const payload: TokenPayload = { id: userId, email }
+    const payload: TokenPayload = { userId, email }
 
     const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload, {
-        secret: this.config.get('JWT_SECRET'),
-        expiresIn: parseInt(this.config.get('JWT_EXPIRATION_TIME')),
+      await this.jwtService.signAsync(payload, {
+        expiresIn: parseInt(this.configService.get('JWT_AT_EXPIRATION')),
+        secret: this.configService.get('JWT_AT_SECRET'),
       }),
-      this.jwtService.signAsync(payload, {
-        secret: this.config.get('JWT_RT_SECRET'),
-        expiresIn: parseInt(this.config.get('JWT_RT_EXPIRATION_TIME')),
+      await this.jwtService.signAsync(payload, {
+        expiresIn: parseInt(this.configService.get('JWT_RT_EXPIRATION')),
+        secret: this.configService.get('JWT_RT_SECRET'),
       }),
     ])
 
-    return { accessToken, refreshToken }
-  }
-
-  async hashData(data: string): Promise<string> {
-    return argon2.hash(data)
-  }
-
-  async compareHashes(data: string, hash: string): Promise<boolean> {
-    return argon2.verify(hash, data)
+    return {
+      accessToken,
+      refreshToken,
+    }
   }
 
   setAuthCookies(res: Response, tokens: Tokens) {
     CookieUtils.setHeaderWithCookie(
       res,
-      tokens,
-      this.config.get('JWT_RT_EXPIRATION_TIME'),
+      { [this.COOKIES_NAMES.accessToken]: tokens.accessToken },
+      parseInt(this.configService.get('JWT_AT_EXPIRATION')),
+    )
+
+    CookieUtils.setHeaderWithCookie(
+      res,
+      { [this.COOKIES_NAMES.refreshToken]: tokens.refreshToken },
+      parseInt(this.configService.get('JWT_RT_EXPIRATION')),
     )
   }
 
   clearAuthCookies(res: Response) {
-    CookieUtils.clearCookie(res, 'accessToken')
-    CookieUtils.clearCookie(res, 'refreshToken')
+    CookieUtils.clearCookie(res, this.COOKIES_NAMES.accessToken)
+    CookieUtils.clearCookie(res, this.COOKIES_NAMES.refreshToken)
+  }
+
+  async hashData(data: string) {
+    return argon2.hash(data)
+  }
+
+  async compareHash(data: string, hash: string) {
+    return argon2.verify(hash, data)
   }
 }

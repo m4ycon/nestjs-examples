@@ -15,7 +15,6 @@ export const TestUtils = {
   genUser(): UserEntity {
     return {
       id: parseInt(faker.random.numeric(3)),
-      displayName: faker.name.firstName(),
       email: faker.helpers.unique(faker.internet.email),
       password: faker.internet.password(),
       hashedRt: faker.internet.password(),

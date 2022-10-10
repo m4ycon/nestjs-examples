@@ -1,37 +1,39 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common'
+import { BadRequestException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
-import { User } from '@prisma/client'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime'
+import { mock, mockReset } from 'jest-mock-extended'
 
-import { TestUtils } from '../common'
-import { PrismaModule } from '../prisma/prisma.module'
+import { TestUtils } from '../common/utils'
+import { UserEntity } from '../entities'
 import { PrismaService } from '../prisma/prisma.service'
 import { UsersService } from './users.service'
 
-type UserProps = Pick<User, 'displayName' | 'email' | 'password'>
-
 describe('UsersService', () => {
   let service: UsersService
-  const prismaMock = {
+  let userData: UserEntity
+
+  const prismaMock = mock({
     user: {
       create: jest.fn(),
-      findMany: jest.fn(),
-      findUniqueOrThrow: jest.fn(),
       findUnique: jest.fn(),
       update: jest.fn(),
       updateMany: jest.fn(),
     },
-    _exceptionNotFound: jest.fn(),
-  }
+  })
+
+  beforeEach(() => {
+    mockReset(prismaMock)
+    jest.restoreAllMocks()
+    userData = TestUtils.genUser()
+  })
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [PrismaModule],
-      providers: [UsersService],
-    })
-      .overrideProvider(PrismaService)
-      .useValue(prismaMock)
-      .compile()
+      providers: [
+        UsersService,
+        { provide: PrismaService, useValue: prismaMock },
+      ],
+    }).compile()
 
     service = module.get<UsersService>(UsersService)
   })
@@ -41,203 +43,91 @@ describe('UsersService', () => {
   })
 
   describe('create', () => {
-    let userData: UserProps
-    beforeAll(() => {
-      userData = TestUtils.genUser()
-    })
-
     it('should create a user', async () => {
-      prismaMock.user.create.mockResolvedValueOnce(userData)
+      prismaMock.user.create.mockResolvedValue(userData)
 
-      const response = await service.create(userData)
-      expect(response).toMatchObject({
-        ...userData,
-        password: expect.any(String),
+      const result = await service.create(userData)
+      expect(result).toEqual(userData)
+      expect(prismaMock.user.create).toBeCalledWith({
+        data: userData,
+        select: { id: true, email: true },
       })
     })
 
-    it('should throw an error if email is already in use', async () => {
-      prismaMock.user.create.mockRejectedValueOnce(
+    it('should throw an exception if email is already in use', async () => {
+      prismaMock.user.create.mockRejectedValue(
         new PrismaClientKnownRequestError('', 'P2002', ''),
       )
 
-      await expect(service.create(userData)).rejects.toBeInstanceOf(
-        new BadRequestException('Email is already in use').constructor,
+      await expect(service.create(userData)).rejects.toThrowError(
+        new BadRequestException('Email already in use'),
       )
     })
 
-    it('should throw an unexpected error in prisma create', async () => {
-      prismaMock.user.create.mockRejectedValueOnce(
-        new Error('Unexpected error'),
-      )
+    it('should throw an error if the database throws an unhandled error', async () => {
+      prismaMock.user.create.mockRejectedValue(new Error())
 
-      await expect(service.create(userData)).rejects.toBeInstanceOf(
-        new BadRequestException('Something went wrong').constructor,
-      )
-    })
-
-    it("should not return user's password", async () => {
-      prismaMock.user.create.mockResolvedValueOnce(userData)
-
-      await service.create(userData)
-      expect(prismaMock.user.create).toHaveBeenLastCalledWith({
-        data: {
-          ...userData,
-          password: expect.any(String),
-        },
-        select: {
-          id: true,
-          displayName: true,
-          email: true,
-          // password must not be returned
-        },
-      })
-    })
-  })
-
-  describe('findAll', () => {
-    let userData: UserProps
-    beforeAll(() => {
-      userData = TestUtils.genUser()
-    })
-
-    it('should return an array of users', async () => {
-      prismaMock.user.findMany.mockResolvedValueOnce([userData])
-
-      const response = await service.findAll()
-      expect(response).toMatchObject([userData])
-    })
-
-    it('should not return password of users', async () => {
-      prismaMock.user.findMany.mockResolvedValueOnce([userData])
-      await service.findAll()
-
-      expect(prismaMock.user.findMany).toHaveBeenLastCalledWith({
-        select: {
-          id: true,
-          displayName: true,
-          email: true,
-          // password must not be returned
-        },
-      })
+      await expect(service.create(userData)).rejects.toThrowError(Error)
     })
   })
 
   describe('findOne', () => {
-    let userData: UserProps
-    beforeAll(() => {
-      userData = TestUtils.genUser()
+    it('should return a user', async () => {
+      prismaMock.user.findUnique.mockResolvedValue(userData)
+
+      const response = await service.findOne({ id: userData.id })
+      expect(response).toEqual(userData)
     })
 
-    it('should return a user', async () => {
-      prismaMock.user.findUniqueOrThrow.mockResolvedValueOnce(userData)
+    it('should find a user by id', async () => {
+      prismaMock.user.findUnique.mockResolvedValue(userData)
 
-      const response = await service.findOne(1)
-      expect(response).toMatchObject(userData)
-      expect(prismaMock.user.findUniqueOrThrow).toHaveBeenLastCalledWith({
-        where: { id: 1 },
-        select: {
-          id: true,
-          displayName: true,
-          email: true,
-          // password must not be returned
-        },
+      await service.findOne({ id: userData.id })
+      expect(prismaMock.user.findUnique).toBeCalledWith({
+        where: { id: userData.id },
       })
     })
 
-    it('should throw an error if user is not found', async () => {
-      prismaMock.user.findUniqueOrThrow.mockRejectedValueOnce(new Error())
+    it('should find a user by email', async () => {
+      prismaMock.user.findUnique.mockResolvedValue(userData)
 
-      await expect(service.findOne(1)).rejects.toBeInstanceOf(
-        new NotFoundException('User not found').constructor,
-      )
-    })
-  })
-
-  describe('getUserInfo', () => {
-    let userData: UserProps
-    beforeAll(() => {
-      userData = TestUtils.genUser()
-    })
-
-    it('should return a user found by email', async () => {
-      prismaMock.user.findUnique.mockResolvedValueOnce(userData)
-
-      const response = await service.getUserInfo({ email: userData.email })
-      expect(response).toMatchObject(userData)
-      expect(prismaMock.user.findUnique).toHaveBeenLastCalledWith({
+      await service.findOne({ email: userData.email })
+      expect(prismaMock.user.findUnique).toBeCalledWith({
         where: { email: userData.email },
       })
     })
 
-    it('should return a user found by id', async () => {
-      prismaMock.user.findUnique.mockResolvedValueOnce(userData)
+    it('should return null if no user is found', async () => {
+      prismaMock.user.findUnique.mockResolvedValue(null)
 
-      const response = await service.getUserInfo({ id: 777 })
-      expect(response).toMatchObject(userData)
-      expect(prismaMock.user.findUnique).toHaveBeenLastCalledWith({
-        where: { id: 777 },
-      })
-    })
-  })
-
-  describe('update', () => {
-    let userData: UserProps
-    beforeAll(() => {
-      userData = TestUtils.genUser()
+      const response = await service.findOne({ id: userData.id })
+      expect(response).toBeNull()
     })
 
-    it('should return a user', async () => {
-      prismaMock.user.update.mockResolvedValueOnce(userData)
-
-      const response = await service.update(1, userData)
-      expect(response).toMatchObject(userData)
-      expect(prismaMock.user.update).toHaveBeenLastCalledWith({
-        where: { id: 1 },
-        data: userData,
-        select: { id: true, displayName: true, email: true },
-      })
-    })
-
-    it('should throw an error if user not found', async () => {
-      prismaMock.user.update.mockRejectedValueOnce(
-        new PrismaClientKnownRequestError('', 'P2025', ''),
+    it('should throw an error if no where argument is provided', async () => {
+      await expect(service.findOne({})).rejects.toThrowError(
+        new Error('Missing where argument'),
       )
-      prismaMock._exceptionNotFound.mockReturnValueOnce(
-        new NotFoundException('User not found'),
-      )
-
-      await expect(service.update(1, userData)).rejects.toBeInstanceOf(
-        new NotFoundException('User not found').constructor,
-      )
-      expect(prismaMock._exceptionNotFound).toHaveBeenCalled()
     })
   })
 
   describe('updateHashedRefreshToken', () => {
-    let userData: UserProps
-    beforeAll(() => {
-      userData = TestUtils.genUser()
-    })
+    it('should update the hashed refresh token', async () => {
+      prismaMock.user.update.mockResolvedValue(userData)
 
-    it('should update rt from a user', async () => {
-      prismaMock.user.update.mockResolvedValueOnce(userData)
-
-      const response = await service.updateHashedRefreshToken(1, 'token')
-      expect(response).toBeUndefined()
-      expect(prismaMock.user.update).toHaveBeenLastCalledWith({
-        where: { id: 1 },
-        data: { hashedRt: 'token' },
+      await service.updateHashedRefreshToken(userData.id, 'hashedToken')
+      expect(prismaMock.user.update).toBeCalledWith({
+        where: { id: userData.id },
+        data: { hashedRt: 'hashedToken' },
       })
     })
 
-    it('should updateMany if rt param is null', async () => {
-      prismaMock.user.updateMany.mockResolvedValueOnce(userData)
+    it('should update the hashed refresh token with a null value', async () => {
+      prismaMock.user.updateMany.mockResolvedValue(userData)
 
-      const response = await service.updateHashedRefreshToken(1, null)
-      expect(response).toBeUndefined()
-      expect(prismaMock.user.updateMany).toHaveBeenLastCalledWith({
-        where: { id: 1, NOT: { hashedRt: null } },
+      await service.updateHashedRefreshToken(userData.id, null)
+      expect(prismaMock.user.updateMany).toBeCalledWith({
+        where: { id: userData.id, hashedRt: { not: null } },
         data: { hashedRt: null },
       })
     })

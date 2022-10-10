@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger'
 import { User } from '@prisma/client'
 import {
   IsDate,
@@ -10,34 +11,33 @@ import {
 } from 'class-validator'
 
 export class UserEntity implements User {
+  @ApiProperty()
   @IsNotEmpty()
   @IsNumber()
   id: number
 
-  @IsOptional()
-  @IsString()
-  displayName: string | null
-
+  @ApiProperty()
   @IsNotEmpty()
-  @IsString()
   @IsEmail()
+  @IsString()
   email: string
 
+  @ApiProperty()
   @IsNotEmpty()
   @IsString()
   @MinLength(6)
   password: string
 
-  @IsOptional()
-  @IsNotEmpty()
+  @ApiProperty()
   @IsString()
+  @IsOptional()
   hashedRt: string
 
-  @IsNotEmpty()
+  @ApiProperty()
   @IsDate()
   createdAt: Date
 
-  @IsNotEmpty()
+  @ApiProperty()
   @IsDate()
   updatedAt: Date
 }

@@ -10,7 +10,6 @@ describe('TestUtils', () => {
       const user = TestUtils.genUser()
 
       expect(user).toHaveProperty('id')
-      expect(user).toHaveProperty('displayName')
       expect(user).toHaveProperty('email')
       expect(user).toHaveProperty('password')
       expect(user).toHaveProperty('hashedRt')
@@ -18,7 +17,6 @@ describe('TestUtils', () => {
       expect(user).toHaveProperty('updatedAt')
 
       expect(typeof user.id).toBe('number')
-      expect(typeof user.displayName).toBe('string')
       expect(typeof user.email).toBe('string')
       expect(typeof user.password).toBe('string')
       expect(typeof user.hashedRt).toBe('string')

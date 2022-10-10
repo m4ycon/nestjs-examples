@@ -1,13 +1,12 @@
 import { Controller, Get } from '@nestjs/common'
 
-import { AppService } from './app.service'
+import { Public } from './common'
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
-
   @Get()
-  isUp() {
-    return this.appService.isUp()
+  @Public()
+  up(): string {
+    return 'Up and running!'
   }
 }

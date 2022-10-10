@@ -7,20 +7,16 @@ import { AtGuard } from './auth/guards'
 import { PrismaModule } from './prisma/prisma.module'
 import { UsersModule } from './users/users.module'
 import { AppController } from './app.controller'
-import { AppService } from './app.service'
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
-    PrismaModule,
+    ConfigModule.forRoot({ isGlobal: true }),
     UsersModule,
+    PrismaModule,
     AuthModule,
   ],
   controllers: [AppController],
   providers: [
-    AppService,
     {
       provide: APP_GUARD,
       useClass: AtGuard, // Global guard, by default all routes are protected
