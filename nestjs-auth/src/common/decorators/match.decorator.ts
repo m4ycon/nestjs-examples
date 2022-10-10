@@ -6,6 +6,11 @@ import {
   ValidatorConstraintInterface,
 } from 'class-validator'
 
+/**
+ * Compares if the value of a property is equal to another property
+ * @param property Other property to match
+ * @param validationOptions Options used to pass to validation decorators.
+ */
 export function Match(property: string, validationOptions?: ValidationOptions) {
   return (object: any, propertyName: string) => {
     registerDecorator({
