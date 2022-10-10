@@ -20,8 +20,8 @@ export class AuthService implements AuthServiceInterface {
     private configService: ConfigService,
   ) {
     this.COOKIES_NAMES = {
-      accessToken: this.configService.get('JWT_AT_COOKIE_NAME'),
-      refreshToken: this.configService.get('JWT_RT_COOKIE_NAME'),
+      accessToken: configService.get('JWT_AT_COOKIE_NAME'),
+      refreshToken: configService.get('JWT_RT_COOKIE_NAME'),
     }
   }
 
@@ -106,13 +106,15 @@ export class AuthService implements AuthServiceInterface {
   setAuthCookies(res: Response, tokens: Tokens) {
     CookieUtils.setHeaderWithCookie(
       res,
-      { [this.COOKIES_NAMES.accessToken]: tokens.accessToken },
+      this.COOKIES_NAMES.accessToken,
+      tokens.accessToken,
       parseInt(this.configService.get('JWT_AT_EXPIRATION')),
     )
 
     CookieUtils.setHeaderWithCookie(
       res,
-      { [this.COOKIES_NAMES.refreshToken]: tokens.refreshToken },
+      this.COOKIES_NAMES.refreshToken,
+      tokens.refreshToken,
       parseInt(this.configService.get('JWT_RT_EXPIRATION')),
     )
   }

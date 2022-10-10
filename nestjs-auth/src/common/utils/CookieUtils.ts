@@ -8,22 +8,22 @@ export const CookieUtils = {
   /**
    * Set cookies with payload data
    * @param res Response from express
-   * @param payload Payload to be stored in the cookie
+   * @param key Key of cookie
+   * @param value Value of cookie
    * @param maxAge Max age of the cookie in milliseconds
    * @example setCookie(res, { userId: 1 }, 1000 * 60 * 60 * 24 * 7)
    */
   setHeaderWithCookie(
     res: Response,
-    payload: { [key: string]: string },
+    key: string,
+    value: string,
     maxAge: number,
   ): void {
-    Object.entries(payload).map(([key, value]) => {
-      res.cookie(key, value, {
-        // secure: true, // only with https
-        httpOnly: true, // will not allow client-side JavaScript to see the cookie
-        maxAge: maxAge * 1000, // convert to milliseconds
-        path: '/',
-      })
+    res.cookie(key, value, {
+      // secure: true, // only with https
+      httpOnly: true, // will not allow client-side JavaScript to see the cookie
+      maxAge: maxAge * 1000, // convert to milliseconds
+      path: '/',
     })
   },
 

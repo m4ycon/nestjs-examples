@@ -17,19 +17,12 @@ describe('CookieUtils', () => {
 
   describe('setHeaderWithCookie', () => {
     it('should set cookie in response header', () => {
-      const payload = {
-        userId: randomUUID(),
-        email: randomUUID(),
-      }
+      const key = randomUUID()
+      const value = randomUUID()
       const maxAge = randomInt(1000)
 
-      CookieUtils.setHeaderWithCookie(res, payload, maxAge)
-      expect(res.cookie).toHaveBeenNthCalledWith(1, 'userId', payload.userId, {
-        httpOnly: true,
-        maxAge: maxAge * 1000,
-        path: '/',
-      })
-      expect(res.cookie).toHaveBeenNthCalledWith(2, 'email', payload.email, {
+      CookieUtils.setHeaderWithCookie(res, key, value, maxAge)
+      expect(res.cookie).toBeCalledWith(key, value, {
         httpOnly: true,
         maxAge: maxAge * 1000,
         path: '/',
