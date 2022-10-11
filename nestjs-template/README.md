@@ -5,13 +5,22 @@ This is a template to use for creating a new project.
 **OBS: If you see something wrong, missunderstood or something that could be improved, please open an issue or a pull request.**
 
 ## Usage
+
 You can use it as it is, you need to do:
-- It uses pnpm, but you can delete the `pnpm-lock.yaml` file and run `npm install` or `yarn` instead;
-- It has a `.env.example` file, you need to copy it to `.env` and fill the values.
+- Copy this folder and put it where you want;
+- Change the name of the folder to the name of your project;
+- Change the name of the project in the `package.json` file;
+- lint-staged and husky have been configured to use a `.git` outside the folder project, but you won't use it that way, so:
+  - You need to modify the command in `.husky/pre-commit` from `"yarn --cwd ./nestjs-template lint-staged"` to `"npx lint-staged"`;
+  - And modify `prepare` script in `package.json` from `"cd .. && husky install nestjs-template/.husky"` to `"husky install"`.
+- It has a `.env.example` file, you need to copy it to `.env` and fill the values;
+- It uses pnpm as package manager, but if you don't want to use it, you can delete the `pnpm-lock.yaml` file and run `npm install` or `yarn` instead to create a lock file and install the dependencies;
+- And that's it, you can start coding.
+
 
 BUT, if you want to **setup this by yourself**, you can follow the steps below (it's using pnpm but you can adapt to your case).
 
-If you navigate in `src` folder, you will see some non cited files, it doesn't have so many files so you check them out.
+If you navigate in `src` folder, you will see some non cited files, it doesn't have so many files so you check them out and decide if you want to use them or not (I recommend you to use them).
 
 ## eslint + prettier
 
@@ -215,4 +224,4 @@ Nest already has a good bootstrap for tests, the only thing I changed is in `pac
 ],
 ```
 
-To know how to write tests, you can check out the `auth module` on `nestjs-auth` example here on this repo. There are some tests there that you can use as a reference. The controllers tests were inspired by [this](https://wanago.io/2020/07/13/api-nestjs-testing-services-controllers-integration-tests/), don't forget to install `supertest` to use it.
+To know how to write tests, you can check out the `auth module` on `nestjs-auth` example here on this repo ([controller](../nestjs-auth/src/auth/auth.controller.spec.ts), [service](../nestjs-auth/src/auth/auth.service.spec.ts)). There are some tests there that you can use as a reference. The controllers tests were inspired by [this](https://wanago.io/2020/07/13/api-nestjs-testing-services-controllers-integration-tests/), don't forget to install `supertest` to use it.
