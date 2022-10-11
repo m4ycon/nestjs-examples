@@ -64,7 +64,7 @@ And add this to `.eslintrc.js`:
 
 That will do the job. But if you want to define your own order, you can add this to `.eslintrc.js` or adapt it to your needs:
 
-```json
+```js
 overrides: [
   {
     files: ["*.ts"],
