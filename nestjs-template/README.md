@@ -167,6 +167,7 @@ $ pnpm add @prisma/client
 $ pnpm prisma init
 ```
 
+Go to `.env` and fill the values with your database url.
 Add some simple model to `prisma/schema.prisma`:
 
 ```prisma
