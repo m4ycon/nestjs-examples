@@ -13,12 +13,9 @@ import { AtGuard, RtGuard } from './guards'
 import { AtStrategy } from './strategies'
 import { Tokens } from './types'
 
-type UserProps = Pick<UserEntity, 'email' | 'password'>
-
 describe('AuthController', () => {
   let app: INestApplication
-  let userData: UserProps
-  let userDataFull: UserEntity
+  let userData: UserEntity
   let tokensData: Tokens
 
   const rtGuardMock = { canActivate: jest.fn() }
@@ -30,11 +27,7 @@ describe('AuthController', () => {
     jest.restoreAllMocks()
 
     tokensData = TestUtils.genTokens()
-    userDataFull = TestUtils.genUser()
-    userData = {
-      email: userDataFull.email,
-      password: userDataFull.password,
-    }
+    userData = TestUtils.genUser()
 
     const module: TestingModule = await Test.createTestingModule({
       imports: [ConfigModule],
@@ -53,7 +46,9 @@ describe('AuthController', () => {
       .compile()
 
     app = module.createNestApplication()
-    app.useGlobalPipes(new ValidationPipe())
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+    )
     await app.init()
   })
 
@@ -69,7 +64,11 @@ describe('AuthController', () => {
     it('should return tokens', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/signup')
-        .send({ ...userData, passwordConfirmation: userData.password })
+        .send({
+          email: userData.email,
+          password: userData.password,
+          passwordConfirmation: userData.password,
+        })
         .expect(201)
       expect(response.body).toEqual({ message: 'Sign up successfully' })
     })
@@ -190,7 +189,7 @@ describe('AuthController', () => {
 
     it('should return a successs message', async () => {
       canActivateAtGuard.mockImplementationOnce((ctx) => {
-        ctx.switchToHttp().getRequest().user = { id: userDataFull.id }
+        ctx.switchToHttp().getRequest().user = { id: userData.id }
         return true
       })
 
@@ -200,7 +199,7 @@ describe('AuthController', () => {
         .post('/auth/signout')
         .expect(200)
         .expect({ message: 'Sign out successfully' })
-      expect(authServiceMock.signout).toHaveBeenLastCalledWith(userDataFull.id)
+      expect(authServiceMock.signout).toHaveBeenLastCalledWith(userData.id)
     })
 
     it('should return 403', async () => {
@@ -215,7 +214,7 @@ describe('AuthController', () => {
       beforeEach(() => {
         rtGuardMock.canActivate.mockImplementation((ctx) => {
           ctx.switchToHttp().getRequest().user = {
-            userId: userDataFull.id,
+            userId: userData.id,
             refreshToken: tokensData.refreshToken,
           }
           return true
@@ -229,7 +228,7 @@ describe('AuthController', () => {
           .expect(200)
           .expect({ message: 'Refresh successfully' })
         expect(authServiceMock.refresh).toHaveBeenLastCalledWith(
-          userDataFull.id,
+          userData.id,
           tokensData.refreshToken,
         )
       })
