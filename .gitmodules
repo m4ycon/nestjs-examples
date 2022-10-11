@@ -1,0 +1,3 @@
+[submodule "nestjs-template"]
+	path = nestjs-template
+	url = ./nestjs-template
