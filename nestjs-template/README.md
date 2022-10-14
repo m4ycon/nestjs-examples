@@ -7,15 +7,16 @@ This is a template to use for creating a new project.
 ## Usage
 
 You can use it as it is, you need to do:
-- Copy this folder and put it where you want;
+- Copy this folder and put it wherever you want;
 - Change the name of the folder to the name of your project;
 - Change the name of the project in the `package.json` file;
+- Run `git init` to start a new git repository inside of this folder;
 - lint-staged and husky have been configured to use a `.git` outside the folder project, but you won't use it that way, so:
   - You need to modify the command in `.husky/pre-commit` from `"yarn --cwd ./nestjs-template lint-staged"` to `"npx lint-staged"`;
   - And modify `prepare` script in `package.json` from `"cd .. && husky install nestjs-template/.husky"` to `"husky install"`.
 - It has a `.env.example` file, you need to copy it to `.env` and fill the values;
 - It uses pnpm as package manager, but if you don't want to use it, you can delete the `pnpm-lock.yaml` file and run `npm install` or `yarn` instead to create a lock file and install the dependencies;
-- And that's it, you can start coding.
+- You can commit the changes and start working on your project.
 
 
 BUT, if you want to **setup this by yourself**, you can follow the steps below (it's using pnpm but you can adapt to your case).
