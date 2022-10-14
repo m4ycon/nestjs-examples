@@ -227,3 +227,36 @@ Nest already has a good bootstrap for tests, the only thing I changed is in `pac
 ```
 
 To know how to write tests, you can check out the `auth module` on `nestjs-auth` example here on this repo ([controller](../nestjs-auth/src/auth/auth.controller.spec.ts), [service](../nestjs-auth/src/auth/auth.service.spec.ts)). There are some tests there that you can use as a reference. The controllers tests were inspired by [this](https://wanago.io/2020/07/13/api-nestjs-testing-services-controllers-integration-tests/), don't forget to install `supertest` to use it.
+
+### Swagger (routes documentation)
+
+To document your routes, you can use Swagger. To install it, follow these instructions:
+
+```bash	
+$ pnpm add @nestjs/swagger
+```
+
+Then, add this to `main.ts`, you can change the options to your needs:
+
+```ts
+...
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+
+async function bootstrap() {
+  ...
+  const config = new DocumentBuilder()
+    .setTitle('NestJS Template')
+    .setDescription('The NestJS Template API description')
+    .setVersion('1.0')
+    .addTag('nestjs-template')
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
+  ...
+}
+...
+```
+
+---
+
+Made with 🔥 by [M4ycon](https://github.com/m4ycon)
