@@ -228,7 +228,15 @@ Nest already has a good bootstrap for tests, the only thing I changed is in `pac
 
 To know how to write tests, you can check out the `auth module` on `nestjs-auth` example here on this repo ([controller](../nestjs-auth/src/auth/auth.controller.spec.ts), [service](../nestjs-auth/src/auth/auth.service.spec.ts)). There are some tests there that you can use as a reference. The controllers tests were inspired by [this](https://wanago.io/2020/07/13/api-nestjs-testing-services-controllers-integration-tests/), don't forget to install `supertest` to use it.
 
-### Swagger (routes documentation)
+### Faker
+
+An interesting tool for generating fake data is [faker](https://fakerjs.dev/guide/), it's very useful when dealing with mocks, instead of using static/fixed inputs you can randomize it. To install it:
+
+```bash
+pnpm add @faker-js/faker -D
+```
+
+## Swagger (routes documentation)
 
 To document your routes, you can use Swagger. To install it, follow these instructions:
 
