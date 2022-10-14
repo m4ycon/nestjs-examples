@@ -51,6 +51,20 @@ describe('ExampleController', () => {
       expect(response).toEqual(userData)
       expect(exampleServiceMock.create).toHaveBeenCalledWith(userData)
     })
+
+    it('should throw an exception if dto is invalid', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/example')
+        .send({ id: '1' })
+        .expect(400)
+        .then(res => res.body)
+
+      expect(response).toMatchObject({
+        statusCode: 400,
+        message: expect.any(Array),
+      })
+      expect(exampleServiceMock.create).not.toHaveBeenCalled()
+    })
   })
 
   describe('findOne', () => {
