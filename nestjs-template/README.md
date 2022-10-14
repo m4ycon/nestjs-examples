@@ -236,6 +236,8 @@ An interesting tool for generating fake data is [faker](https://fakerjs.dev/guid
 pnpm add @faker-js/faker -D
 ```
 
+TODO: jest-mock-extended
+
 ## Swagger (routes documentation)
 
 To document your routes, you can use Swagger. To install it, follow these instructions:
