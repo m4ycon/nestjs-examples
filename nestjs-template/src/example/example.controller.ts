@@ -22,6 +22,7 @@ export class ExampleController {
   }
 
   @Get(':id')
+  @HttpCode(HttpStatus.OK)
   findOne(@Param('id') id: string) {
     return this.exampleService.findOne(+id)
   }

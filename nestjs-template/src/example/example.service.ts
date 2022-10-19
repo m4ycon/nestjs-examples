@@ -6,9 +6,10 @@ import {
 
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateExampleDto } from './dto'
+import { ExampleServiceInterface } from './interfaces'
 
 @Injectable()
-export class ExampleService {
+export class ExampleService implements ExampleServiceInterface {
   constructor(private prisma: PrismaService) {}
 
   async create(createExampleDto: CreateExampleDto) {
