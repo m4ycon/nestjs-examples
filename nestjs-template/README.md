@@ -10,7 +10,7 @@ You can use it as it is, you need to do:
 - Copy this folder and put it wherever you want;
 - Change the name of the folder to the name of your project;
 - Change the name of the project in the `package.json` file;
-- Run `git init` to start a new git repository inside of this folder;
+- Run `git init` to start a new git repository inside this folder;
 - lint-staged and husky have been configured to use a `.git` outside the folder project, but you won't use it that way, so:
   - You need to modify the command in `.husky/pre-commit` from `"yarn --cwd ./nestjs-template lint-staged"` to `"npx lint-staged"`;
   - And modify `prepare` script in `package.json` from `"cd .. && husky install nestjs-template/.husky"` to `"husky install"`.
@@ -25,7 +25,7 @@ If you navigate in `src` folder, you will see some non cited files, it doesn't h
 
 ## eslint + prettier
 
-NestJS default template already has eslint and prettier installed. And you can add some extra rules to make it more strict.
+NestJS default template already has [eslint](https://eslint.org/) and [prettier](https://prettier.io/) installed. And you can add some extra rules to make it more strict.
 
 ### Remove unused imports
 
@@ -124,7 +124,9 @@ Some additional rules, personal preferences, but I recommend to use at least the
 "endOfLine": "lf", // enforce consistent line endings
 ```
 
-## lint-staged + husky
+## lint-staged + husky 
+
+I used this [reference](https://valchan.com.br/lint-staged-husky/) and added some customizations.
 
 To make sure that your code is always clean and consistent, you can add lint-staged and husky to your project.
 
@@ -132,7 +134,7 @@ Follow these instructions:
 
 ```bash
 $ pnpm add lint-staged husky -D
-# add prepare script in package.json (it's deprecated but works)
+# add prepare script in package.json by cmd (it's deprecated but works)
 $ npm set-script prepare "husky install"
 $ pnpm prepare
 $ pnpm husky add .husky/pre-commit "npx lint-staged"
@@ -156,7 +158,7 @@ This will run `pnpm format` and `pnpm lint` on every `.ts` staged file inside `s
 
 ## Prisma
 
-Since we are using Prisma, we need to install it and add do some initial configs.
+Since we are using [Prisma](https://www.prisma.io/), we need to install it and add do some initial configs.
 
 Follow these instructions:
 
@@ -216,7 +218,7 @@ async function bootstrap() {
 
 ## Tests
 
-Nest already has a good bootstrap for tests, the only thing I changed is in `package.json` on where it collects coverage from (inside `jest` configs), to adapt it to my needs.
+Nest already has a good bootstrap for tests, the only thing I customize is in `package.json`, where it collects coverage from (inside `jest` configs), to adapt it to my needs.
 
 ```json
 "collectCoverageFrom": [
@@ -226,7 +228,7 @@ Nest already has a good bootstrap for tests, the only thing I changed is in `pac
 ],
 ```
 
-To know how to write tests, you can check out the `auth module` on `nestjs-auth` example here on this repo ([controller](../nestjs-auth/src/auth/auth.controller.spec.ts), [service](../nestjs-auth/src/auth/auth.service.spec.ts)). There are some tests there that you can use as a reference. The controllers tests were inspired by [this](https://wanago.io/2020/07/13/api-nestjs-testing-services-controllers-integration-tests/), don't forget to install `supertest` to use it.
+To know how to write tests, you can check out the `auth module` on `nestjs-auth` example here on this repo ([controller](../nestjs-auth/src/auth/auth.controller.spec.ts), [service](../nestjs-auth/src/auth/auth.service.spec.ts)). There are some tests that you can use as a reference. The controllers tests were inspired by [this](https://wanago.io/2020/07/13/api-nestjs-testing-services-controllers-integration-tests/), don't forget to install `supertest` to use it.
 
 ### Faker
 
@@ -238,7 +240,7 @@ pnpm add @faker-js/faker -D
 
 ### jest-mock-extended
 
-This lib we use to help on mocking classes, it's very useful when you have a lot of dependencies and you don't want to mock all of them one by one. To install it:
+[jest-mock-extended](https://github.com/marchaos/jest-mock-extended) is useful to help on mocking classes, it's very useful when you have a lot of dependencies and you don't want to mock all of them one by one. To install it:
 
 ```bash
 $ pnpm add jest-mock-extended -D
@@ -259,12 +261,14 @@ const usersServiceMock = {
 const usersServiceMock = mock<UsersService>();
 ```
 
-And it comes with very useful methods like `mockClear` and `mockReset` to reset the mock.
+And it comes with very useful methods like `mockReset` to reset the mock.
+
+**OBS**: I don't recommend to use it with PrismaService, as it's a deep dependency with many ramifications, it's better to mock it manually.
 
 
 ## Swagger (routes documentation)
 
-To document your routes, you can use Swagger. To install it, follow these instructions:
+To document your routes, you can use [Swagger](https://docs.nestjs.com/openapi/introduction). To install it, follow these instructions:
 
 ```bash	
 $ pnpm add @nestjs/swagger
