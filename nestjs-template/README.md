@@ -236,7 +236,31 @@ An interesting tool for generating fake data is [faker](https://fakerjs.dev/guid
 pnpm add @faker-js/faker -D
 ```
 
-TODO: jest-mock-extended
+### jest-mock-extended
+
+This lib we use to help on mocking classes, it's very useful when you have a lot of dependencies and you don't want to mock all of them one by one. To install it:
+
+```bash
+$ pnpm add jest-mock-extended -D
+```
+
+An example of how to use it:
+
+```ts
+
+// common way
+const usersServiceMock = {
+  create: jest.fn(),
+  findOne: jest.fn(),
+  ...
+}
+
+// jest-mock-extended way
+const usersServiceMock = mock<UsersService>();
+```
+
+And it comes with very useful methods like `mockClear` and `mockReset` to reset the mock.
+
 
 ## Swagger (routes documentation)
 
