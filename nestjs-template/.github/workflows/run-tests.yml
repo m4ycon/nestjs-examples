@@ -1,0 +1,42 @@
+name: Run tests
+
+on:
+  push:
+    branches:
+      - master # or main
+      - develop
+  pull_request:
+    branches:
+      - master # or main
+      - develop
+
+env:
+  DATABASE_URL: "postgresql://user:password@localhost:5432/nestjs-template"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: Enter in the project folder
+        run: cd nestjs-template
+
+      - name: Install yarn
+        run: npm install -g yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Prisma generate
+        run: yarn prisma generate
+
+      - name: Run tests
+        run: yarn test
