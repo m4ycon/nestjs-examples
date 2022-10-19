@@ -1,4 +1,4 @@
-name: Run tests
+name: Run tests on nestjs-template
 
 on:
   push:
@@ -13,6 +13,10 @@ on:
 env:
   DATABASE_URL: "postgresql://user:password@localhost:5432/nestjs-template"
 
+defaults:
+  run:
+    working-directory: ./nestjs-template
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -25,9 +29,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 16
-
-      - name: Enter in the project folder
-        run: cd nestjs-template
 
       - name: Install yarn
         run: npm install -g yarn
