@@ -30,14 +30,14 @@ jobs:
         with:
           node-version: 16
 
-      - name: Install yarn
-        run: npm install -g yarn
+      - name: Install pnpm
+        run: npm install -g pnpm
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Prisma generate
-        run: yarn prisma generate
+        run: pnpm prisma generate
 
       - name: Run tests
-        run: yarn test
+        run: pnpm test

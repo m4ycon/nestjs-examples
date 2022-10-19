@@ -266,6 +266,50 @@ And it comes with very useful methods like `mockReset` to reset the mock.
 **OBS**: I don't recommend to use it with PrismaService, as it's a deep dependency with many ramifications, it's better to mock it manually.
 
 
+## Github Actions
+
+I use Github Actions to run tests on every push and pull request in `master`/`develop`. You can check out the [workflow](../.github/workflows/run-tests-template.yml) here.
+
+To adapt it to use in your project, you need to:
+
+- Create a new workflow file in yours `.github/workflows` folder
+- Change the `name` (1st line) and `branches` to your needs, in this case, I'm using `master` and `develop` to be watched
+- Change the `env` variables with all variables that you need to use in your project, like `DATABASE_URL`, `JWT_SECRET`, etc.
+- Remove:
+  ```yml
+  defaults:
+    run:
+      working-directory: ./nestjs-template
+  ```
+  - This was needed to run tests on `nestjs-template`, as it's a monorepo and the workflow is in the root folder, but you don't need it if you are using this template as a standalone project
+- The commands are using `pnpm`, but if you project is using `npm` or `yarn`, you can change it to your needs
+  - Some flags are specific to `pnpm`, like `--frozen-lockfile` (this one exists in `yarn` too), so you need to check if it exists in your package manager
+
+## Pull Request Template
+
+I use a pull request template to help me on writing good pull requests. You can check it out [here](../.github/pull_request_template.md).
+
+When you create a new pull request, you will see a template like this:
+
+```md
+# Porque esse merge é necessário
+
+Descreva com algumas palavras o motivo desse merge request.
+
+# O que esse merge faz
+
+- Implementa essa feature
+- Melhora a implementação daquela consulta ao BD
+- Refatora a rota de criação de usuários
+
+# Issue Relacionado
+
+closes #<issue>
+```
+
+You can change it to your needs.
+
+
 ## Swagger (routes documentation)
 
 To document your routes, you can use [Swagger](https://docs.nestjs.com/openapi/introduction). To install it, follow these instructions:
