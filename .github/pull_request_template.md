@@ -1,13 +1,29 @@
-# Porque esse merge é necessário
+## Why this merge request is needed? What does it solve?
 
-Descreva com algumas palavras o motivo desse merge request.
+Describe briefly the problem you solved.
 
-# O que esse merge faz
+## What does this merge request do?
 
-- Implementa essa feature
-- Melhora a implementação daquela consulta ao BD
-- Refatora a rota de criação de usuários
+- Implement feature X
+- Fix bug Y
+- Refactor code Z
 
-# Issue Relacionado
+## How to test?
+
+What should the person reviewing your code do to comprove your code is working
+
+## Images (optional)
+
+## Checklist
+
+- [ ] I've tested my code manually
+- [ ] I've self-reviewed and refactored my code
+- [ ] I've commented my code, particularly in hard-to-understand areas
+- [ ] My changes generate no new errors or warnings
+- [ ] My changes break no previous tests
+- [ ] I added automated tests that comprove my code is working
+- [ ] My changes contribute to the project
+
+## Related Issue
 
 closes #<issue>
