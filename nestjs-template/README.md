@@ -216,6 +216,20 @@ async function bootstrap() {
 }
 ```
 
+
+## CORS
+
+To enable CORS, you need to set this inside `bootstrap` on `main.ts`:
+
+```ts
+  app.enableCors({
+    origin: true, // TODO: change to your domain, this is for development
+    credentials: true, // enable CORS response for requests with credentials (cookies, http authentication)
+  })
+```
+
+With this you can make requests from your frontend to your backend. Remember to set the `withCredentials` option to `true` on your frontend requests, to work with cookies, if you are using `axios`.
+
 ## Tests
 
 Nest already has a good bootstrap for tests, the only thing I customize is in `package.json`, where it collects coverage from (inside `jest` configs), to adapt it to my needs.
