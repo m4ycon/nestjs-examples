@@ -9,10 +9,14 @@ import { TokenPayload } from '../types'
 
 @Injectable()
 export class RtStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
-  constructor(configService: ConfigService) {
+  constructor(private configService: ConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-        (req) => CookieUtils.getCookieValue(req, 'refreshToken'),
+        (req) =>
+          CookieUtils.getCookieValue(
+            req,
+            configService.get('JWT_RT_COOKIE_NAME'),
+          ),
       ]),
       ignoreExpiration: false,
       secretOrKey: configService.get('JWT_RT_SECRET'),
@@ -21,7 +25,10 @@ export class RtStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
   }
 
   async validate(req: Request, payload: TokenPayload) {
-    const refreshToken = CookieUtils.getCookieValue(req, 'refreshToken')
+    const refreshToken = CookieUtils.getCookieValue(
+      req,
+      this.configService.get('JWT_RT_COOKIE_NAME'),
+    )
 
     return { ...payload, refreshToken }
   }

@@ -11,7 +11,11 @@ export class AtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(configService: ConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-        (req) => CookieUtils.getCookieValue(req, 'accessToken'),
+        (req) =>
+          CookieUtils.getCookieValue(
+            req,
+            configService.get('JWT_AT_COOKIE_NAME'),
+          ),
       ]),
       ignoreExpiration: false,
       secretOrKey: configService.get('JWT_AT_SECRET'),
