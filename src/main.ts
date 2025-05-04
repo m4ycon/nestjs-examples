@@ -3,10 +3,13 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 import { AppModule } from './app.module';
+import { TypedConfigService } from './modules/config/typed-config.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(TypedConfigService);
 
+  // pipes
   app.useGlobalPipes(
     new ValidationPipe({
       /* validator will strip validated (returned) object of any 
@@ -18,15 +21,17 @@ async function bootstrap() {
     }),
   );
 
+  // cors
   app.enableCors({
     origin: true,
     credentials: true,
   });
 
+  // docs
   const config = new DocumentBuilder().setTitle('NestJS Template').build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(configService.get('PORT'));
 }
 void bootstrap();
