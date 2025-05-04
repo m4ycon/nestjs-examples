@@ -16,6 +16,9 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+    "typeorm:cli": "yarn build && typeorm -d ./dist/data-source.js",
+    "migrate:add": "node ./scripts/migrate.js",
+    "migrate:remove": "yarn typeorm:cli migration:revert",
     "format": "pretty-quick --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "prepare": "husky"
@@ -38,9 +41,6 @@
     "testEnvironment": "node"
   },
   "lint-staged": {
-    "prisma/schema.prisma": [
-      "prisma format"
-    ],
     "src/**/*.ts": [
       "yarn format",
       "yarn lint --max-warnings=0 --cache"
@@ -52,9 +52,12 @@
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/swagger": "^11.1.6",
+    "@nestjs/typeorm": "^11.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
+    "dotenv": "^16.5.0",
     "joi": "^17.13.3",
+    "pg": "^8.15.6",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "typeorm": "^0.3.22"
